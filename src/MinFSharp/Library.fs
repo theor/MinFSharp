@@ -1,20 +1,5 @@
 namespace MinFSharp
 
-/// Documentation for my library
-///
-/// ## Example
-///
-///     let h = Library.hello 1
-///     printfn "%d" h
-///
-module Library =
-
-  /// Returns 42
-  ///
-  /// ## Parameters
-  ///  - `num` - whatever
-  let hello _num = 42
-
 module Type =
     type t =
     | Unit
@@ -30,11 +15,14 @@ module Identifier =
     type t = Id of string
 
 module Syntax =
+
     [<CustomEquality;NoComparison>]
     type FBody = | Body of t | Ext of (t list -> t)
     with
-        override x.Equals(yobj) =
+        override x.Equals(_yobj) =
             true //TODO: FIXME
+        override x.GetHashCode() = 0
+
     and t =
     | Unit
     | Bool of bool
@@ -46,12 +34,15 @@ module Syntax =
     | App of t * t list
     with
         override x.ToString() = sprintf "%A" x
+
 module Env =
     open Identifier
     type t = Map<Identifier.t,Syntax.t>
-    let newEnv = Map.empty
-                 |> Map.add (Id "add") (Syntax.FunDef([Id "x",Type.Int; Id "y", Type.Int],
+    let newEnv =
+        [(Id "add"), (Syntax.FunDef([Id "x",Type.Int; Id "y", Type.Int],
                                         Syntax.Ext(fun [Syntax.Int x; Syntax.Int y] -> Syntax.Int (x+y))))
+        ] |> Map.ofList
+
 module Interpreter =
     open Syntax
     open Chessie.ErrorHandling

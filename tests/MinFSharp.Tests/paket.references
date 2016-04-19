@@ -1,3 +1,6 @@
+group Core
+FParsec
 group Test
 NUnit
 NUnit.Runners
+File:FsUnitTyped.fs

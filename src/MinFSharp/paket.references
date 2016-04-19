@@ -1,2 +1,3 @@
-group Lib
-	File:ErrorHandling.fs .
+group Core
+FParsec
+File:ErrorHandling.fs .

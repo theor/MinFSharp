@@ -25,8 +25,11 @@ GITHUB
   specs:
     modules/Octokit/Octokit.fsx (3bf706bd6058733a1a034755741076b3953aaf09)
       Octokit
-GROUP Lib
-
+GROUP Core
+NUGET
+  remote: https://www.nuget.org/api/v2
+  specs:
+    FParsec (1.0.2)
 GITHUB
   remote: fsprojects/Chessie
   specs:
@@ -37,3 +40,7 @@ NUGET
   specs:
     NUnit (2.6.4)
     NUnit.Runners (2.6.4)
+GITHUB
+  remote: fsprojects/FsUnit
+  specs:
+    src/FsUnit.NUnit/FsUnitTyped.fs (43086ca8981c7642c1067ad5e9de80caf73ba4ec)
