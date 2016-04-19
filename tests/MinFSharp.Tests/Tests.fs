@@ -23,7 +23,13 @@ let testEvalRes env ast expRes =
 let ``a`` () =
     let ast = Int 42
     testEvalRes Env.newEnv ast ast
-
+[<Test>]
+let ``app add`` () =
+    let ast = App(
+        Var(Id "add"),
+        [Int 42; Int 3]
+    )
+    testEvalRes Env.newEnv ast (Int 45)
 [<Test>]
 let ``let var then return`` () =
     let ast =
@@ -38,7 +44,7 @@ let ``let var then return`` () =
 let ``function app`` () =
     let ast =
         App(
-            (FunDef((Id "x", Type.Int), Var(Id "x"))),
-            Int 13
+            (FunDef([Id "x", Type.Int], Body(Var(Id "x")))),
+            [Int 13]
         )
     testEvalRes Env.newEnv ast (Int 13)

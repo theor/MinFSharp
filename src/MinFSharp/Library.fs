@@ -30,19 +30,28 @@ module Identifier =
     type t = Id of string
 
 module Syntax =
-
-    type t =
+    [<CustomEquality;NoComparison>]
+    type FBody = | Body of t | Ext of (t list -> t)
+    with
+        override x.Equals(yobj) =
+            true //TODO: FIXME
+    and t =
     | Unit
     | Bool of bool
     | Int of int
     | Float of float
     | Let of (Identifier.t * Type.t) * t * t
     | Var of Identifier.t
-    | FunDef of (Identifier.t * Type.t) * t
-    | App of t * t
+    | FunDef of (Identifier.t * Type.t) list * FBody
+    | App of t * t list
+    with
+        override x.ToString() = sprintf "%A" x
 module Env =
+    open Identifier
     type t = Map<Identifier.t,Syntax.t>
     let newEnv = Map.empty
+                 |> Map.add (Id "add") (Syntax.FunDef([Id "x",Type.Int; Id "y", Type.Int],
+                                        Syntax.Ext(fun [Syntax.Int x; Syntax.Int y] -> Syntax.Int (x+y))))
 module Interpreter =
     open Syntax
     open Chessie.ErrorHandling
@@ -54,9 +63,14 @@ module Interpreter =
         | Bool(_) | Int(_) | Float(_) -> ok a
         | Let((id,_ty), value, body) -> eval (e |> Map.add id value) body
         | Var(id) -> eval e (Map.find id e)
-        | App(fid, args) ->
+        | App(fid, fparams) ->
             match eval e fid with
-            | Ok ((FunDef ((argId,_argTy), fbody)), _) -> eval (Map.add argId args e) fbody
+            | Ok ((FunDef (fargs, fbody)), _) ->
+                match fbody with
+                | Body b ->
+                    let ne = List.zip fargs fparams |> List.fold (fun env ((ai,_aty),fp) -> Map.add ai fp env) e
+                    eval ne b
+                | Ext ext -> ok <| ext fparams
             | Ok _ -> fail AppNotFound
             | Bad(_e) -> fail AppNotFound
         | FunDef(_fid, _body) -> ok a
