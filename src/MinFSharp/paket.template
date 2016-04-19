@@ -1,0 +1,25 @@
+type project
+title
+    MinFSharp
+owners
+    theor
+authors 
+    theor
+projectUrl
+    http://github.com/theor/MinFSharp
+iconUrl
+    https://raw.githubusercontent.com/theor/MinFSharp/master/docs/files/img/logo.png
+licenseUrl
+    http://github.com/theor/MinFSharp/blob/master/LICENSE.txt
+requireLicenseAcceptance
+    false
+copyright
+    Copyright 2015
+tags
+    mincaml
+summary
+    
+description
+    Description not set
+
+
