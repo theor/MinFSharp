@@ -68,6 +68,7 @@
     </Compile>
     <Compile Include="ParserTests.fs" />
     <Compile Include="Tests.fs" />
+    <Compile Include="TypingTests.fs" />
     <None Include="paket.references" />
     <Content Include="App.config" />
   </ItemGroup>

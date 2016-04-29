@@ -1,7 +1,6 @@
 namespace MinFSharp.Tests
 
 module EvalTests =
-
     open MinFSharp
     open MinFSharp.Syntax
     open MinFSharp.Interpreter
@@ -14,33 +13,32 @@ module EvalTests =
         let ev = eval env ast
         match ev with
         | Bad(e) -> failwith (e.ToString())
-        | Ok(e,_) -> e |> shouldEqual expRes
+        | Ok(e, _) -> e |> shouldEqual expRes
 
     [<Test>]
-    let ``a`` () =
+    let a() =
         let ast = Int 42
         testEvalRes Env.newEnv ast ast
+
     [<Test>]
-    let ``app add`` () =
-        let ast = App(
-                    Var(Id "add"),
-                    [Int 42; Int 3])
-        testEvalRes Env.newEnv ast (Int 45)
-    [<Test>]
-    let ``let var then return`` () =
+    let ``app add``() =
         let ast =
-            Let(
-                (Id "x", Type.Int),
-                Int 13,
-                Var (Id "x")
-            )
+            App(Var(Id "add"),
+                [ Int 42
+                  Int 3 ])
+        testEvalRes Env.newEnv ast (Int 45)
+
+    [<Test>]
+    let ``let var then return``() =
+        let ast = Let((Id "x", Type.Int), Int 13, Var(Id "x"))
         testEvalRes Env.newEnv ast (Int 13)
 
     [<Test>]
-    let ``function app`` () =
-        let ast =
-            App(
-                (FunDef([Id "x", Type.Int], Body(Var(Id "x")))),
-                [Int 13]
-            )
+    let ``function app``() =
+        let ast = App((FunDef([ Id "x", Type.Int ], Body(Var(Id "x")))), [ Int 13 ])
         testEvalRes Env.newEnv ast (Int 13)
+
+    [<Test>]
+    let ``function app 2``() =
+        let ast = App((FunDef([ Id "x", Type.Int; Id "y", Type.Int ], Body(Var(Id "y")))), [ Int 13; Int 4 ])
+        testEvalRes Env.newEnv ast (Int 4)

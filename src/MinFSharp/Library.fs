@@ -17,38 +17,62 @@ module Identifier =
 module Syntax =
 
     [<CustomEquality;NoComparison>]
-    type FBody = | Body of t | Ext of (t list -> t)
+    type FBody<'U> = | Body of t<'U> | Ext of (t<'U> list -> t<'U>)
     with
         override x.Equals(_yobj) =
             true //TODO: FIXME
         override x.GetHashCode() = 0
 
-    and t =
+    and t<'U> =
     | Unit
     | Bool of bool
     | Int of int
     | Float of float
-    | Let of (Identifier.t * Type.t) * t * t
+    | Let of (Identifier.t * Type.t) * t<'U> * t<'U>
+    | If of t<'U> * t<'U> * t<'U>
     | Var of Identifier.t
-    | FunDef of (Identifier.t * Type.t) list * FBody
-    | App of t * t list
+    | FunDef of (Identifier.t * Type.t) list * FBody<'U>
+    | App of t<'U> * t<'U> list
     with
         override x.ToString() = sprintf "%A" x
 
+    let appId s args = App(Var(Identifier.Id s), args)
+
 module Env =
     open Identifier
-    type t = Map<Identifier.t,Syntax.t>
-    let newEnv =
+    type t<'U> = Map<Identifier.t,Syntax.t<'U>>
+    let newEnv<'U> =
         [(Id "add"), (Syntax.FunDef([Id "x",Type.Int; Id "y", Type.Int],
                                         Syntax.Ext(fun [Syntax.Int x; Syntax.Int y] -> Syntax.Int (x+y))))
         ] |> Map.ofList
+
+module Typing =
+    open Chessie.ErrorHandling
+    type TypingError = UnknownSymbol of Identifier.t | TypeMismatch
+    type TypingResult = Result<Type.t, TypingError>
+    let rec typing env a : TypingResult =
+        match a with
+        | Syntax.Unit -> ok Type.Unit
+        | Syntax.Bool(_) -> ok Type.Bool
+        | Syntax.Int(_) -> ok Type.Int
+        | Syntax.Float(_) -> ok Type.Float
+        | Syntax.Let((vid,_), vval, e) ->
+            trial {
+                let! tVal = typing env vval
+                let nEnv = env |> Map.add vid tVal
+                return! typing nEnv e
+            }
+        | Syntax.Var(vid) ->
+            Map.tryFind vid env |> failIfNone (UnknownSymbol(vid))
+        | Syntax.FunDef(_, _) -> failwith "Not implemented yet"
+        | Syntax.App(_, _) -> failwith "Not implemented yet"
 
 module Interpreter =
     open Syntax
     open Chessie.ErrorHandling
     type EvalError = | AppNotFound
-    type EvalResult = Result<Syntax.t,EvalError>
-    let rec eval (e:Env.t)(a:Syntax.t) : EvalResult =
+    type EvalResult<'U> = Result<Syntax.t<'U>,EvalError>
+    let rec eval<'U> (e:Env.t<'U>)(a:Syntax.t<'U>) : EvalResult<'U> =
         match a with
         | Unit -> ok Unit
         | Bool(_) | Int(_) | Float(_) -> ok a
