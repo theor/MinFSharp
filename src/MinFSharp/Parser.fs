@@ -12,7 +12,7 @@ module Parser =
 
     type ParsingResult<'U> = Result<Syntax.t<'U>, ParsingError>
 
-    let keywords = Set([ "let"; "in"; "if"; "then"; "else" ])
+    let keywords = Set([ "="; "let"; "in"; "if"; "then"; "else" ])
 
     let parse (s : string) : ParsingResult<'U> =
         let ws = spaces
@@ -33,17 +33,21 @@ module Parser =
         let pExpNoApp, pExpNoAppImpl = createParserForwardedToRef()
         let pDecl = pId .>> ws .>> pstringws "=" .>>. pExp .>> ws <!> "pDecl"
 
-        let pFunArg = pId
+        let pFunArg = pId <!> "pFunArg"
+//        let pFunArgs = sepBy1 pFunArg ws <!> "pFunArgs"
+        let pFunArgs = many1 (pFunArg .>> ws) <!> "pFunArgs"
+
         let pFunDecl =
-            pId .>> ws .>>. sepBy1 pFunArg ws |>> (fun (fid, fargs) -> fid,fargs |> List.map (fun aid -> (aid, Type.Var None)) )
+            pId .>> ws .>>. pFunArgs |>> (fun (fid, fargs) -> fid,fargs |> List.map (fun aid -> (aid, Type.Var None)) )
+            <!> "pFunDecl"
         let pLetFun =
-            pstringws "let" >>. pFunDecl .>> pstringws "=" .>>. pExp
-            |>> (fun ((fid, fargs), fbody) -> Syntax.Let((fid, Type.Var None), Syntax.FunDef(fargs, FBody.Body fbody), Unit))
+            pstringws "let" >>. pFunDecl .>> ws .>> pstringws "=" .>>. pExp
+            |>> (fun ((fid, fargs), fbody) -> Syntax.Let((fid, Type.Var None), Syntax.FunDef(fargs, FBody.Body fbody)))
             <!> "pLetFun"
         let pLet =
 //            pstringws "let" >>. pDecl .>> pstringws "in" .>>. pExp
             pstringws "let" >>. pDecl .>> pstringws "in" .>>. pExp
-            |>> (fun ((id, va), a) -> Syntax.Let((id, Type.Int), va, a))
+            |>> (fun ((id, va), a) -> Syntax.LetIn((id, Type.Int), va, a))
             <!> "pLet"
 
         let pIf =
@@ -65,8 +69,9 @@ module Parser =
                              pSimpleExp
                     ]<!> "pExp"
 
+        let p = pExp
         let r =
-            FParsec.CharParsers.runParserOnString pExp ({ Debug =
+            FParsec.CharParsers.runParserOnString p ({ Debug =
                                                               { Message = ""
                                                                 Indent = 0 } }) "" s
         match r with

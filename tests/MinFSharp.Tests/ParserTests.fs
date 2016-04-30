@@ -22,13 +22,13 @@ module ParserTests =
                 d "f 42 13" (appId "f" [Int 42; Int 13])
                 d "(f 42 13)" (appId "f" [Int 42; Int 13])
                 d "(f (g 42) 13)" (App(Var(Id "f"), [appId "g" [Int 42]; Int 13]))
-                d "let x = 7\nx" (Let(((Id "x"), Type.Int), Int 7, Var(Id "x")))
+                d "let x = 7 in\nx" (LetIn(((Id "x"), Type.Int), Int 7, Var(Id "x")))
                 d "true" (Bool true)
                 d "false" (Bool false)
                 d "if true then 1 else 2" (If(Bool true, Int 1, Int 2))
                 d "if true then\n  1\nelse\n  2" (If(Bool true, Int 1, Int 2))
                 d "if (f 42) then 1 else 2" (If((appId "f" [Int 42]), Int 1, Int 2))
-                d "let f x y = y" (FunDef([(Id "x", Type.Var None);(Id "y", Type.Var None)], FBody.Body << Var <| Id "y"))
+                d "let f x y = y" (Let((Id "f", Type.Var None), (FunDef([(Id "x", Type.Var None);(Id "y", Type.Var None)], FBody.Body << Var <| Id "y"))))
             |]
 
     let testParseOk (s:string) (a:Syntax.t<Unit>) =
