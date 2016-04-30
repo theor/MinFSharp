@@ -9,7 +9,7 @@ module Type =
     | Fun of t list * t (* arguments are uncurried *)
     | Tuple of t list
     | Array of t
-    | Var of t option ref
+    | Var of t option
 
 module Identifier =
     type t = Id of string
@@ -88,5 +88,5 @@ module Interpreter =
                 | Ext ext -> ok <| ext fparams
             | Ok _ -> fail AppNotFound
             | Bad(_e) -> fail AppNotFound
-        | FunDef(_fid, _body) -> ok a
+        | FunDef(_fargs, _body) -> ok a
         | _ -> failwith "Not implemented yet"

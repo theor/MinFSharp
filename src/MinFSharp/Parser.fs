@@ -30,9 +30,18 @@ module Parser =
             <!> "pId"
         let pSimpleExp = pInt <|> pBool <|> attempt (pId |>> Syntax.Var) .>> ws <!> "pSimpleExp"
         let pExp, pExpImpl = createParserForwardedToRef()
+        let pExpNoApp, pExpNoAppImpl = createParserForwardedToRef()
         let pDecl = pId .>> ws .>> pstringws "=" .>>. pExp .>> ws <!> "pDecl"
 
+        let pFunArg = pId
+        let pFunDecl =
+            pId .>> ws .>>. sepBy1 pFunArg ws |>> (fun (fid, fargs) -> fid,fargs |> List.map (fun aid -> (aid, Type.Var None)) )
+        let pLetFun =
+            pstringws "let" >>. pFunDecl .>> pstringws "=" .>>. pExp
+            |>> (fun ((fid, fargs), fbody) -> Syntax.Let((fid, Type.Var None), Syntax.FunDef(fargs, FBody.Body fbody), Unit))
+            <!> "pLetFun"
         let pLet =
+//            pstringws "let" >>. pDecl .>> pstringws "in" .>>. pExp
             pstringws "let" >>. pDecl .>> pstringws "in" .>>. pExp
             |>> (fun ((id, va), a) -> Syntax.Let((id, Type.Int), va, a))
             <!> "pLet"
@@ -44,9 +53,17 @@ module Parser =
 
         let pParExp = between (pchar '(') (pchar ')') pExp .>> ws <!> "pParExp"
 
-        let pApp = pSimpleExp .>>. (many1 pSimpleExp) |>> Syntax.App <!> "pApp"
+        let pApp = pSimpleExp .>>. (many1 pExpNoApp) |>> (fun (a,b) -> Syntax.App(a,b)) <!> "pApp"
+//        let pApp = pSimpleExp .>>. (pExp) |>> (fun (a,b) -> Syntax.App(a,[b])) <!> "pApp"
 
-        pExpImpl := attempt pIf <|> attempt pLet <|> attempt pParExp <|> attempt pApp <|> pSimpleExp <!> "pExp"
+        pExpNoAppImpl := attempt pIf <|> attempt pLet <|> attempt pParExp <|> pSimpleExp <!> "pExp"
+        pExpImpl := choice [ attempt pApp
+                             attempt pIf
+                             attempt pLetFun
+                             attempt pLet
+                             attempt pParExp
+                             pSimpleExp
+                    ]<!> "pExp"
 
         let r =
             FParsec.CharParsers.runParserOnString pExp ({ Debug =
