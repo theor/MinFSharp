@@ -33,16 +33,22 @@ module Parser =
 
         let pParenExp = between (skipChar '(') (skipChar ')') pExp
 
-        let pTypeAnn = opt (str ":" >>. pId)
+        let pTypeAnn, pTypeAnnImpl = createParserForwardedToRef()
+        pTypeAnnImpl := choice [ 
+//                                 pTypeAnn .>> str "[]" |>> Type.Array
+                                 stringReturn "int" Type.Int
+                                 stringReturn "bool" Type.Bool
+                                 stringReturn "float" Type.Float
+                                 stringReturn "unit" Type.Unit
+                               ]
+                        .>>. (opt <| str "[]")
+                        |>> (fun (t, arr) -> if Option.isNone arr then t else Type.Array t)
+        let pOptTypeAnn = opt (str ":" >>. pTypeAnn .>> ws)
                        |>> function
                            | None -> Type.Var None
-                           | Some (Identifier.Id s) ->
-                                match s with
-                                | "int" -> Type.Int
-                                | "bool" -> Type.Bool
-                                | _ -> failwith "unknown type"
-                        <!> "pTypeAnn"
-        let pDecVal = pId .>>. pTypeAnn .>> str "=" .>>. pExp |>> (fun ((id, t), exp) -> ((id, t), exp))
+                           | Some (t) -> t
+                       <!> "pOptTypeAnn"
+        let pDecVal = pId .>>. pOptTypeAnn .>> str "=" .>>. pExp |>> (fun ((id, t), exp) -> ((id, t), exp))
         
         let pFunArgs = many1 pId |>> List.map (fun x -> (x, Type.Var None))
         let pDecFun = tuple4 pId pFunArgs (str "=") pExp |>> (fun (id, args, _, body) -> ((id, Type.Var None), Syntax.FunDef(args, FBody.Body body)))
@@ -53,6 +59,7 @@ module Parser =
                    |>> (fun ((dVar, dVal), exp) -> Syntax.LetIn(dVar, dVal, exp))
 
         let pSimpleExp = choice [
+                                  stringReturn "()" Syntax.Unit
                                   pInt
                                   pBool
                                   attempt (pId |>> Syntax.Var)

@@ -34,6 +34,8 @@ module ParserTests =
                                                  Some <| Var(Id "x")))
                 d "let x : bool = 7 in\nx" (LetIn(((Id "x"), Type.Bool), Int 7,
                                                  Some <| Var(Id "x")))
+                d "let x : int[] = () in ()" (LetIn((Id "x", Type.Array Type.Int), Unit, Some Unit))
+                d "let x : int * bool = () in ()" (LetIn((Id "x", Type.Tuple [Type.Int; Type.Bool]), Unit, Some Unit))
                 d "true" (Bool true)
                 d "false" (Bool false)
                 d "if true then 1 else 2" (If(Bool true, Int 1, Int 2))
