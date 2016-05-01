@@ -13,62 +13,70 @@ module Parser =
     type ParsingResult<'U> = Result<Syntax.t<'U>, ParsingError>
 
     let keywords = Set([ "="; "let"; "in"; "if"; "then"; "else" ])
+    let ws = many (anyOf " \t")// spaces
+    let nws = spaces
+    let pstringws s = skipString s <!> ("pstringws '" + s + "'") .>> ws
+    let str = pstringws
+    let strn s = pstring s .>> nws
 
     let parse (s : string) : ParsingResult<'U> =
-        let ws = spaces
-        let pstringws s = pstring s <!> ("pstringws " + s) .>> ws
         let pInt = pint32 |>> Syntax.Int <!> "pInt"
         let pBool = stringReturn "true" (Syntax.Bool true) <|> stringReturn "false" (Syntax.Bool false) <!> "pBool"
-
-        //        let pId = letter .>>. many (letter <|> digit) |>> (fun (f,r)
-        //->System.String.Concat(Array.ofList(f :: r)) |> (Identifier.Id))
         let pId =
             many1Satisfy2 isLetter (fun c -> isLetter c || isDigit c)
             >>= (fun x ->
             if keywords.Contains x then fail "KEYWORD"
-            else preturn <| Identifier.Id x)
+            else preturn <| Identifier.Id x .>> ws)
             <!> "pId"
-        let pSimpleExp = pInt <|> pBool <|> attempt (pId |>> Syntax.Var) .>> ws <!> "pSimpleExp"
+        
         let pExp, pExpImpl = createParserForwardedToRef()
-        let pExpNoApp, pExpNoAppImpl = createParserForwardedToRef()
-        let pDecl = pId .>> ws .>> pstringws "=" .>>. pExp .>> ws <!> "pDecl"
 
-        let pFunArg = pId <!> "pFunArg"
-//        let pFunArgs = sepBy1 pFunArg ws <!> "pFunArgs"
-        let pFunArgs = many1 (pFunArg .>> ws) <!> "pFunArgs"
+        let pParenExp = between (skipChar '(') (skipChar ')') pExp
 
-        let pFunDecl =
-            pId .>> ws .>>. pFunArgs |>> (fun (fid, fargs) -> fid,fargs |> List.map (fun aid -> (aid, Type.Var None)) )
-            <!> "pFunDecl"
-        let pLetFun =
-            pstringws "let" >>. pFunDecl .>> ws .>> pstringws "=" .>>. pExp
-            |>> (fun ((fid, fargs), fbody) -> Syntax.Let((fid, Type.Var None), Syntax.FunDef(fargs, FBody.Body fbody)))
-            <!> "pLetFun"
-        let pLet =
-//            pstringws "let" >>. pDecl .>> pstringws "in" .>>. pExp
-            pstringws "let" >>. pDecl .>> pstringws "in" .>>. pExp
-            |>> (fun ((id, va), a) -> Syntax.LetIn((id, Type.Int), va, a))
-            <!> "pLet"
+        let pDecVal = pId .>> str "=" .>>. pExp |>> (fun (id, exp) -> ((id, Type.Var None), exp))
+        
+        let pFunArgs = many1 pId |>> List.map (fun x -> (x, Type.Var None))
+        let pDecFun = tuple4 pId pFunArgs (str "=") pExp |>> (fun (id, args, _, body) -> ((id, Type.Var None), Syntax.FunDef(args, FBody.Body body)))
+
+        let pDec = attempt pDecFun <|> pDecVal
+        let pDeclist = pDec
+        let pLet = (str "let") >>. pDeclist .>>. (opt ((strn "in") >>. pExp))
+                   |>> (fun ((dVar, dVal), exp) -> match exp with | None -> Syntax.Let(dVar, dVal) | Some exp -> Syntax.LetIn(dVar, dVal, exp))
+
+        let pSimpleExp = choice [
+                                  pInt
+                                  pBool
+                                  attempt (pId |>> Syntax.Var)
+                                  attempt pParenExp
+                                  pLet
+                                  ] .>> ws <!> "pSimpleExp"
+        let pAppExps = many1 pSimpleExp |>> (fun l -> if l.Length = 1 then l.Head else Syntax.App(l.Head, l.Tail)) <!> "pAppExps"
+        let pOpExp, pOpExpImpl = createParserForwardedToRef()
+        
+//        let isSymbolicOperatorChar = isAnyOf "!%&*+-./<=>@^|~?"
+//        let remainingOpChars_ws = manySatisfy isSymbolicOperatorChar .>> ws
+//        let opp = new OperatorPrecedenceParser<Syntax.t<'U>, string, UserState>()
+//        let addSymbolicInfixOperators prefix precedence associativity =
+//            let op = InfixOperator(prefix, remainingOpChars_ws,
+//                                   precedence, associativity, (),
+//                                   fun remOpChars expr1 expr2 ->
+//                                       BinOp(prefix + remOpChars, expr1, expr2))
+//            opp.AddOperator(op)
+//        "!%&*+-./<=>@^|~?" |> Seq.iter (fun c -> addSymbolicInfixOperators (c.ToString()) 10 Associativity.Left)
+//        opp.TermParser <- attempt pAppExps
+//        let pBinOp = opp.ExpressionParser <!> "pBinOp"
+        let pBinOp = attempt ( many1 (anyOf "!%&*+-./<=>@^|~?") ) .>> ws |>> (List.toArray >> System.String)
+
+        let pBinOpApp = attempt (tuple3 pAppExps pBinOp pOpExp) |>> (fun (l,o,r) -> Syntax.BinOp(o, l, r))
+        pOpExpImpl := choice [pBinOpApp; pAppExps] .>> nws
+                      <!> "pOpExp"
 
         let pIf =
-            pstringws "if" >>. pExp .>> pstringws "then" .>>. pExp .>> pstringws "else" .>>. pExp
+            str "if" >>. pOpExp .>> strn "then" .>>. pOpExp .>> strn "else" .>>. pOpExp
             |>> (fun ((eIf, eThen), eElse) -> Syntax.If(eIf, eThen, eElse))
             <!> "pIf"
-
-        let pParExp = between (pchar '(') (pchar ')') pExp .>> ws <!> "pParExp"
-
-        let pApp = pSimpleExp .>>. (many1 pExpNoApp) |>> (fun (a,b) -> Syntax.App(a,b)) <!> "pApp"
-//        let pApp = pSimpleExp .>>. (pExp) |>> (fun (a,b) -> Syntax.App(a,[b])) <!> "pApp"
-
-        pExpNoAppImpl := attempt pIf <|> attempt pLet <|> attempt pParExp <|> pSimpleExp <!> "pExp"
-        pExpImpl := choice [ attempt pApp
-                             attempt pIf
-                             attempt pLetFun
-                             attempt pLet
-                             attempt pParExp
-                             pSimpleExp
-                    ]<!> "pExp"
-
+    
+        pExpImpl := pIf <|> pOpExp
         let p = pExp
         let r =
             FParsec.CharParsers.runParserOnString p ({ Debug =

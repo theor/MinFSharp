@@ -22,12 +22,14 @@ module Syntax =
         override x.Equals(_yobj) =
             true //TODO: FIXME
         override x.GetHashCode() = 0
-
+//    and Op = Lt | Gt | Eq | Ne
+    and Op = string
     and t<'U> =
     | Unit
     | Bool of bool
     | Int of int
     | Float of float
+    | BinOp of Op * t<'U> * t<'U>
     | Let of (Identifier.t * Type.t) * t<'U>
     | LetIn of (Identifier.t * Type.t) * t<'U> * t<'U>
     | If of t<'U> * t<'U> * t<'U>

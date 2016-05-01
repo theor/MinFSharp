@@ -21,7 +21,9 @@ let addToDebug (stream:CharStream<UserState>) label dtype =
         | Enter    -> sprintf "Entering %s" label, startIndent, startIndent+1
         | Leave res ->
             let str = sprintf "Leaving  %s (%A)" label res.Status
-            let resStr = sprintf "%s %A" (str.PadRight(msgPadLen-startIndent-1)) res.Result
+            let w = msgPadLen-startIndent-1
+//            if w < 0 then failwith "NEGATIVE"
+            let resStr = sprintf "%s %A" (str.PadRight(if w < 0 then 0 else w)) res.Result
             resStr, startIndent-1, startIndent-1
 
     let indentStr =
