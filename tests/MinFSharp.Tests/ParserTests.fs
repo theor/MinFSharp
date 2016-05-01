@@ -30,6 +30,10 @@ module ParserTests =
                 d "(f (g 42) 13)" (App(Var(Id "f"), [appId "g" [Int 42]; Int 13]))
                 d "let x = 7 in\nx" (LetIn(((Id "x"), Type.Var None), Int 7,
                                            Some <| Var(Id "x")))
+                d "let x : int = 7 in\nx" (LetIn(((Id "x"), Type.Int), Int 7,
+                                                 Some <| Var(Id "x")))
+                d "let x : bool = 7 in\nx" (LetIn(((Id "x"), Type.Bool), Int 7,
+                                                 Some <| Var(Id "x")))
                 d "true" (Bool true)
                 d "false" (Bool false)
                 d "if true then 1 else 2" (If(Bool true, Int 1, Int 2))

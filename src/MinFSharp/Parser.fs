@@ -33,7 +33,16 @@ module Parser =
 
         let pParenExp = between (skipChar '(') (skipChar ')') pExp
 
-        let pDecVal = pId .>> str "=" .>>. pExp |>> (fun (id, exp) -> ((id, Type.Var None), exp))
+        let pTypeAnn = opt (str ":" >>. pId)
+                       |>> function
+                           | None -> Type.Var None
+                           | Some (Identifier.Id s) ->
+                                match s with
+                                | "int" -> Type.Int
+                                | "bool" -> Type.Bool
+                                | _ -> failwith "unknown type"
+                        <!> "pTypeAnn"
+        let pDecVal = pId .>>. pTypeAnn .>> str "=" .>>. pExp |>> (fun ((id, t), exp) -> ((id, t), exp))
         
         let pFunArgs = many1 pId |>> List.map (fun x -> (x, Type.Var None))
         let pDecFun = tuple4 pId pFunArgs (str "=") pExp |>> (fun (id, args, _, body) -> ((id, Type.Var None), Syntax.FunDef(args, FBody.Body body)))
