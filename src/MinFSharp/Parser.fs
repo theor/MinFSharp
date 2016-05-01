@@ -41,7 +41,7 @@ module Parser =
         let pDec = attempt pDecFun <|> pDecVal
         let pDeclist = pDec
         let pLet = (str "let") >>. pDeclist .>>. (opt ((strn "in") >>. pExp))
-                   |>> (fun ((dVar, dVal), exp) -> match exp with | None -> Syntax.Let(dVar, dVal) | Some exp -> Syntax.LetIn(dVar, dVal, exp))
+                   |>> (fun ((dVar, dVal), exp) -> Syntax.LetIn(dVar, dVal, exp))
 
         let pSimpleExp = choice [
                                   pInt

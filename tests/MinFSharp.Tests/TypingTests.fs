@@ -16,8 +16,8 @@ module TypingTests =
     type Tcs() =
         static member Data() =
             [| d Type.Int (Int 42)
-               d Type.Int (LetIn((Id("x"),Type.Unit), (Int 3), Int 42))
-               d Type.Int (LetIn((Id("x"),Type.Unit), (Int 3), Var(Id("x"))))
+               d Type.Int (LetIn((Id("x"),Type.Unit), (Int 3), Some <| Int 42))
+               d Type.Int (LetIn((Id("x"),Type.Unit), (Int 3), Some << Var <| Id "x"))
             |]// |> Array.map d
     [<Test>]
     [<TestCaseSource(typeof<Tcs>, "Data")>]

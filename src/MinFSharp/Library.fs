@@ -30,8 +30,8 @@ module Syntax =
     | Int of int
     | Float of float
     | BinOp of Op * t<'U> * t<'U>
-    | Let of (Identifier.t * Type.t) * t<'U>
-    | LetIn of (Identifier.t * Type.t) * t<'U> * t<'U>
+//    | Let of (Identifier.t * Type.t) * t<'U>
+    | LetIn of (Identifier.t * Type.t) * t<'U> * (t<'U> option)
     | If of t<'U> * t<'U> * t<'U>
     | Var of Identifier.t
     | FunDef of (Identifier.t * Type.t) list * FBody<'U>
@@ -59,7 +59,7 @@ module Typing =
         | Syntax.Bool(_) -> ok Type.Bool
         | Syntax.Int(_) -> ok Type.Int
         | Syntax.Float(_) -> ok Type.Float
-        | Syntax.LetIn((vid,_), vval, e) ->
+        | Syntax.LetIn((vid,_), vval, Some e) ->
             trial {
                 let! tVal = typing env vval
                 let nEnv = env |> Map.add vid tVal
@@ -79,7 +79,7 @@ module Interpreter =
         match a with
         | Unit -> ok Unit
         | Bool(_) | Int(_) | Float(_) -> ok a
-        | LetIn((id,_ty), value, body) -> eval (e |> Map.add id value) body
+        | LetIn((id,_ty), value, Some body) -> eval (e |> Map.add id value) body
         | Var(id) -> eval e (Map.find id e)
         | App(fid, fparams) ->
             match eval e fid with
