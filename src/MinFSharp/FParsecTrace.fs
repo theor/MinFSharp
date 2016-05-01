@@ -11,6 +11,7 @@ type UserState = { mutable Debug: DebugInfo }
 type P<'t> = Parser<'t, UserState>
 
 type DebugType<'a> = Enter | Leave of Reply<'a>
+let mutable print = false
 
 let addToDebug (stream:CharStream<UserState>) label dtype =
     let msgPadLen = 50
@@ -43,7 +44,7 @@ let addToDebug (stream:CharStream<UserState>) label dtype =
         Message = stream.UserState.Debug.Message + fullStr
         Indent = nextIndent
     }
-    printf "%s" fullStr
+    if print then printf "%s" fullStr
 
 let (<!>) (p: P<_>) label :P<_> =
     fun stream ->

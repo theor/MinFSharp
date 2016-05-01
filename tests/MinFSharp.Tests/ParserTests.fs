@@ -45,4 +45,5 @@ module ParserTests =
 
     [<TestCaseSource(typeof<TCS>, "Data")>]
     let ``parsing tests`` (s:string,a:Syntax.t<Unit>) =
+//        FParsecTrace.print <- true
         testParseOk s a
