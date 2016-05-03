@@ -42,3 +42,8 @@ module EvalTests =
     let ``function app 2``() =
         let ast = App((FunDef([ Id "x", Type.Int; Id "y", Type.Int ], Body(Var(Id "y")))), [ Int 13; Int 4 ])
         testEvalRes Env.newEnv ast (Int 4)
+        
+    [<Test>]
+    let ``binop app +``() =
+        let ast = BinOp("+", Int 3, Int 4)
+        testEvalRes Env.newEnv ast (Int 7)

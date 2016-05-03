@@ -30,12 +30,18 @@ module ParserTests =
                 d "(f (g 42) 13)" (App(Var(Id "f"), [appId "g" [Int 42]; Int 13]))
                 d "let x = 7 in\nx" (LetIn(((Id "x"), Type.Var None), Int 7,
                                            Some <| Var(Id "x")))
+                d "let x = 1 in\nlet y = 2 in\n x+y" (LetIn(((Id "x"), Type.Var None), Int 1,
+                                                            (LetIn(((Id "y"), Type.Var None), Int 2,
+                                                                   BinOp("+", Var(Id "x"), Var(Id "y"))|>Some))|>Some))
+                d "1;2" (Seq [Int 1; Int 2])
+                d "1\n2" (Seq [Int 1; Int 2])
                 d "let x : int = 7 in\nx" (LetIn(((Id "x"), Type.Int), Int 7,
                                                  Some <| Var(Id "x")))
                 d "let x : bool = 7 in\nx" (LetIn(((Id "x"), Type.Bool), Int 7,
                                                  Some <| Var(Id "x")))
-                d "let x : int[] = () in ()" (LetIn((Id "x", Type.Array Type.Int), Unit, Some Unit))
+                d "let x : int array = () in ()" (LetIn((Id "x", Type.Array Type.Int), Unit, Some Unit))
                 d "let x : int * bool = () in ()" (LetIn((Id "x", Type.Tuple [Type.Int; Type.Bool]), Unit, Some Unit))
+                d "let x : int -> bool -> float = () in ()" (LetIn((Id "x", Type.Fun([Type.Int; Type.Bool], Type.Float)), Unit, Some Unit))
                 d "true" (Bool true)
                 d "false" (Bool false)
                 d "if true then 1 else 2" (If(Bool true, Int 1, Int 2))
@@ -59,5 +65,5 @@ module ParserTests =
 
     [<TestCaseSource(typeof<TCS>, "Data")>]
     let ``parsing tests`` (s:string,a:Syntax.t<Unit>) =
-//        FParsecTrace.print <- true
+        //FParsecTrace.print <- true
         testParseOk s a

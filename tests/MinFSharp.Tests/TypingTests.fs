@@ -22,5 +22,7 @@ module TypingTests =
     [<Test>]
     [<TestCaseSource(typeof<Tcs>, "Data")>]
     let ``sdfsdf`` (ast:Syntax.t<Unit>) t =
-        Typing.typing Map.empty ast |> shouldEqual (ok t)
+        let at = Typing.typing Map.empty ast
+        printf "%O" at
+        at |> shouldEqual (ok t)
 

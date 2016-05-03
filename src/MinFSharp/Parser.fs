@@ -30,20 +30,21 @@ module Parser =
             <!> "pId"
         
         let pExp, pExpImpl = createParserForwardedToRef()
+        let pBlockExp, pBlockExpImpl = createParserForwardedToRef()
 
         let pParenExp = between (skipChar '(') (skipChar ')') pExp
 
-        let pTypeAnn, pTypeAnnImpl = createParserForwardedToRef()
-        pTypeAnnImpl := choice [ 
-//                                 pTypeAnn .>> str "[]" |>> Type.Array
-                                 stringReturn "int" Type.Int
-                                 stringReturn "bool" Type.Bool
-                                 stringReturn "float" Type.Float
-                                 stringReturn "unit" Type.Unit
-                               ]
-                        .>>. (opt <| str "[]")
+        let pTypeAnn= choice [ 
+                               stringReturn "int" Type.Int
+                               stringReturn "bool" Type.Bool
+                               stringReturn "float" Type.Float
+                               stringReturn "unit" Type.Unit
+                             ]
+                        .>> ws .>>. (opt <| str "array")
                         |>> (fun (t, arr) -> if Option.isNone arr then t else Type.Array t)
-        let pOptTypeAnn = opt (str ":" >>. pTypeAnn .>> ws)
+        let pTypeTuple = sepBy1 pTypeAnn (str "*") |>> (fun l -> if l.Length = 1 then l.Head else Type.Tuple l)
+        let pTypeFun = sepBy pTypeTuple (str "->") |>> (fun l -> if l.Length = 1 then l.Head else let n = List.length l in Type.Fun(List.take (n-1) l, List.item (n-1) l))
+        let pOptTypeAnn = opt (str ":" >>. pTypeFun .>> ws)
                        |>> function
                            | None -> Type.Var None
                            | Some (t) -> t
@@ -69,30 +70,19 @@ module Parser =
         let pAppExps = many1 pSimpleExp |>> (fun l -> if l.Length = 1 then l.Head else Syntax.App(l.Head, l.Tail)) <!> "pAppExps"
         let pOpExp, pOpExpImpl = createParserForwardedToRef()
         
-//        let isSymbolicOperatorChar = isAnyOf "!%&*+-./<=>@^|~?"
-//        let remainingOpChars_ws = manySatisfy isSymbolicOperatorChar .>> ws
-//        let opp = new OperatorPrecedenceParser<Syntax.t<'U>, string, UserState>()
-//        let addSymbolicInfixOperators prefix precedence associativity =
-//            let op = InfixOperator(prefix, remainingOpChars_ws,
-//                                   precedence, associativity, (),
-//                                   fun remOpChars expr1 expr2 ->
-//                                       BinOp(prefix + remOpChars, expr1, expr2))
-//            opp.AddOperator(op)
-//        "!%&*+-./<=>@^|~?" |> Seq.iter (fun c -> addSymbolicInfixOperators (c.ToString()) 10 Associativity.Left)
-//        opp.TermParser <- attempt pAppExps
-//        let pBinOp = opp.ExpressionParser <!> "pBinOp"
         let pBinOp = attempt ( many1 (anyOf "!%&*+-./<=>@^|~?") ) .>> ws |>> (List.toArray >> System.String)
 
         let pBinOpApp = attempt (tuple3 pAppExps pBinOp pOpExp) |>> (fun (l,o,r) -> Syntax.BinOp(o, l, r))
-        pOpExpImpl := choice [pBinOpApp; pAppExps] .>> nws
+        pOpExpImpl := choice [pBinOpApp; pAppExps] .>> ws
                       <!> "pOpExp"
 
         let pIf =
-            str "if" >>. pOpExp .>> strn "then" .>>. pOpExp .>> strn "else" .>>. pOpExp
+            str "if" >>. pOpExp .>> strn "then" .>>. pOpExp .>> nws .>> strn "else" .>> nws .>>. pOpExp
             |>> (fun ((eIf, eThen), eElse) -> Syntax.If(eIf, eThen, eElse))
             <!> "pIf"
     
-        pExpImpl := pIf <|> pOpExp
+        pBlockExpImpl := pIf <|> pOpExp <!> "pBlockExp"
+        pExpImpl := sepBy1 pBlockExp (strn ";" |>> ignore <|> (anyOf "\n" .>> ws |>> ignore <!> "p \\n")) |>> (fun l -> if List.length l = 1 then l.Head else Syntax.Seq l) <!> "pExp"
         let p = pExp
         let r =
             FParsec.CharParsers.runParserOnString p ({ Debug =
