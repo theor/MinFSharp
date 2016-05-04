@@ -28,13 +28,13 @@ module Parser =
             if keywords.Contains x then fail "KEYWORD"
             else preturn <| Identifier.Id x .>> ws)
             <!> "pId"
-        
+
         let pExp, pExpImpl = createParserForwardedToRef()
         let pBlockExp, pBlockExpImpl = createParserForwardedToRef()
 
         let pParenExp = between (skipChar '(') (skipChar ')') pExp
 
-        let pTypeAnn= choice [ 
+        let pTypeAnn= choice [
                                stringReturn "int" Type.Int
                                stringReturn "bool" Type.Bool
                                stringReturn "float" Type.Float
@@ -50,7 +50,7 @@ module Parser =
                            | Some (t) -> t
                        <!> "pOptTypeAnn"
         let pDecVal = pId .>>. pOptTypeAnn .>> str "=" .>>. pExp |>> (fun ((id, t), exp) -> ((id, t), exp))
-        
+
         let pFunArgs = many1 pId |>> List.map (fun x -> (x, Type.Var None))
         let pDecFun = tuple4 pId pFunArgs (str "=") pExp |>> (fun (id, args, _, body) -> ((id, Type.Var None), Syntax.FunDef(args, FBody.Body body)))
 
@@ -69,7 +69,7 @@ module Parser =
                                   ] .>> ws <!> "pSimpleExp"
         let pAppExps = many1 pSimpleExp |>> (fun l -> if l.Length = 1 then l.Head else Syntax.App(l.Head, l.Tail)) <!> "pAppExps"
         let pOpExp, pOpExpImpl = createParserForwardedToRef()
-        
+
         let pBinOp = attempt ( many1 (anyOf "!%&*+-./<=>@^|~?") ) .>> ws |>> (List.toArray >> System.String)
 
         let pBinOpApp = attempt (tuple3 pAppExps pBinOp pOpExp) |>> (fun (l,o,r) -> Syntax.BinOp(o, l, r))
@@ -80,7 +80,7 @@ module Parser =
             str "if" >>. pOpExp .>> strn "then" .>>. pOpExp .>> nws .>> strn "else" .>> nws .>>. pOpExp
             |>> (fun ((eIf, eThen), eElse) -> Syntax.If(eIf, eThen, eElse))
             <!> "pIf"
-    
+
         pBlockExpImpl := pIf <|> pOpExp <!> "pBlockExp"
         pExpImpl := sepBy1 pBlockExp (strn ";" |>> ignore <|> (anyOf "\n" .>> ws |>> ignore <!> "p \\n")) |>> (fun l -> if List.length l = 1 then l.Head else Syntax.Seq l) <!> "pExp"
         let p = pExp
