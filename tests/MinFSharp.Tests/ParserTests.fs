@@ -20,6 +20,7 @@ module ParserTests =
             [|  d "42" (Int 42)
                 d "(42)" (Int 42)
                 d "x" (Var <| Id "x")
+                d "x-1" (BinOp("-", Var <| Id "x", Int 1))
 //                d "=" (Var <| Id "=")
                 d "1<2" (BinOp("<", Int 1, Int 2))
                 d "1 <!> 2" (BinOp("<!>", Int 1, Int 2))
@@ -56,14 +57,41 @@ module ParserTests =
                 d "let f x y = y" (LetIn((Id "f", Type.Var None), (FunDef([(Id "x", Type.Var None);(Id "y", Type.Var None)],
                                                                           FBody.Body << Var <| Id "y")),
                                          None))
+                d "let fact n =\
+                     if n <= 1 then 1
+                     else n * (fact (n - 1))"
+                   (LetIn((Id "fact", Type.Var None),
+                          FunDef([(Id "n", Type.Var None)],
+                                 Body(If(BinOp ("<=",Var (Id "n"),Int 1),
+                                         Int 1,
+                                         BinOp("*",Var (Id "n"),
+                                                   App (Var (Id "fact"),[BinOp ("-", Var (Id "n"),Int 1)]))))),None))
+                d "let fact n =\
+                     if n <= 1 then 1
+                     else n * (fact (n-1))"
+                   (LetIn((Id "fact", Type.Var None),
+                          FunDef([(Id "n", Type.Var None)],
+                                 Body(If(BinOp ("<=",Var (Id "n"),Int 1),
+                                         Int 1,
+                                         BinOp("*",Var (Id "n"),
+                                                   App (Var (Id "fact"),[BinOp ("-", Var (Id "n"),Int 1)]))))),None))
             |]
 
     let testParseOk (s:string) (a:Syntax.t<Unit>) =
         match MinFSharp.Parser.parse s with
-        | Ok(ast,_) -> ast |> shouldEqual a
+        | Ok(ast,_) -> printf "%A" ast; ast |> shouldEqual a
         | Bad(e) -> failwith (e.ToString())
 
     [<TestCaseSource(typeof<TCS>, "Data")>]
     let ``parsing tests`` (s:string,a:Syntax.t<Unit>) =
         //FParsecTrace.print <- true
         testParseOk s a
+
+    [<Test>]
+    let ``fbody equality test`` () =
+        let a = FunDef([(Id "n", Type.Var None)],
+                                 Body(If(BinOp ("<=",Var (Id "n"),Int 1),
+                                         Int 1,
+                                         BinOp("*",Var (Id "n"),
+                                                   App (Var (Id "fact"),[BinOp ("-", Var (Id "n"),Int -1)])))))
+        a |> shouldEqual a

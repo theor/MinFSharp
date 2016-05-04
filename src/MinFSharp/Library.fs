@@ -28,8 +28,14 @@ module Syntax =
     [<CustomEquality;NoComparison>]
     type FBody<'U> = | Body of t<'U> | Ext of (t<'U> list -> t<'U>)
     with
-        override x.Equals(_yobj) =
-            true //TODO: FIXME
+        override x.Equals(yobj) =
+            match yobj with
+            | :? FBody<'U> as y ->
+                match x,y with
+                | Ext ex, Ext ey -> System.Object.ReferenceEquals(ex, ey)
+                | Body bx, Body by -> bx = by
+                | _,_ -> false
+            | _ -> false
         override x.GetHashCode() = 0
 //    and Op = Lt | Gt | Eq | Ne
     and Op = string
@@ -51,7 +57,7 @@ module Syntax =
 
     let appId s args = App(Var(Identifier.Id s), args)
 
-    let map f s = 
+    let map f s =
         match s with
         | Unit | Bool(_) | Int(_) | Float(_) | Var(_) -> f s
         | BinOp(op, l, r) -> f (BinOp(op, f l, f r))
@@ -94,7 +100,7 @@ module Typing =
         | Syntax.FunDef(args, Syntax.FBody.Body body) ->
             trial {
                 let targs = args |> List.map (snd)
-                
+
                 let! tvody = typing env body
                 return Type.Fun(targs, tvody)
             }
