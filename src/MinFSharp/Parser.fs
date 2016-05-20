@@ -54,7 +54,7 @@ module Parser =
 
         let pFunArgs = many1 (pId .>>? ws1) |>> List.map (fun x -> (x, Type.Var None))
         let pDecFun = tuple4 (pId .>>? ws1) pFunArgs (str "=") (pExp .>> ws)
-                      |>> (fun (id, args, _, body) -> ((id, Type.Var None), Syntax.FunDef(args, FBody.Body body)))
+                      |>> (fun (id, args, _, body) -> ((id, Type.Var None), Syntax.FunDef(args, FBody.Body body, Type.Var None)))
                       <!> "pDecFun"
 
         let pDec = attempt pDecFun <|> pDecVal

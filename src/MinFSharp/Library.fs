@@ -24,7 +24,6 @@ module Identifier =
     type t = Id of string
 
 module Syntax =
-
     [<CustomEquality;NoComparison>]
     type FBody<'U> = | Body of t<'U> | Ext of (t<'U> list -> t<'U>)
     with
@@ -49,11 +48,14 @@ module Syntax =
     | LetIn of (Identifier.t * Type.t) * t<'U> * (t<'U> option)
     | If of t<'U> * t<'U> * t<'U>
     | Var of Identifier.t
-    | FunDef of (Identifier.t * Type.t) list * FBody<'U>
+    | FunDef of (Identifier.t * Type.t) list * FBody<'U> * Type.t
     | App of t<'U> * t<'U> list
     | Seq of t<'U> list
     with
         override x.ToString() = sprintf "%A" x
+
+    let opName (o:Op) = sprintf "(%s)" o
+
 
     let appId s args = App(Var(Identifier.Id s), args)
 
@@ -63,24 +65,59 @@ module Syntax =
         | BinOp(op, l, r) -> f (BinOp(op, f l, f r))
         | LetIn((id,t), eval, ein) -> f (LetIn((id, t), f eval, Option.map f ein))
         | If(cond, ethen, eelse) -> f (If(f cond, f ethen, f eelse))
-        | FunDef(args, Body body) -> f(FunDef(args, f body |> Body))
-        | FunDef(args, Ext ext) -> f(FunDef(args, Ext ext))
+        | FunDef(args, Body body, ret) -> f(FunDef(args, f body |> Body, ret))
+        | FunDef(args, Ext ext, ret) -> f(FunDef(args, Ext ext, ret))
         | App(fu, args) -> f(App(f fu, args |> List.map f))
         | Seq stmts -> f(Seq(stmts |> List.map f))
 
 module Env =
     open Identifier
     type t<'U> = Map<Identifier.t,Syntax.t<'U>>
-    let newEnv<'U> =
+    let newEnv<'U> : t<'U> =
         [(Id "add"), (Syntax.FunDef([Id "x",Type.Int; Id "y", Type.Int],
-                                        Syntax.Ext(fun [Syntax.Int x; Syntax.Int y] -> Syntax.Int (x+y))))
+                                        Syntax.Ext(fun [Syntax.Int x; Syntax.Int y] -> Syntax.Int (x+y)), Type.Int))
          (Id "(+)", Syntax.Var(Id "add"))
         ] |> Map.ofList
 
 module Typing =
     open Chessie.ErrorHandling
+    open Chessie.ErrorHandling.Trial
     type TypingError = UnknownSymbol of Identifier.t | TypeMismatch
     type TypingResult = Result<Type.t, TypingError>
+    type TypedAstResult<'U> = Result<Syntax.t<'U> * Type.t, TypingError>
+    let rec typed<'U> (env:Env.t<'U>) x : TypedAstResult<'U> =
+        match x with
+        | Syntax.Unit -> ok (x, Type.Unit)
+        | Syntax.Bool(_) -> ok (x, Type.Bool)
+        | Syntax.Int(_) -> ok (x, Type.Int)
+        | Syntax.Float(_) -> ok (x, Type.Float)
+        | Syntax.BinOp(op, a, b) ->
+            trial {
+                let! ta, tya = typed env a
+                let! tb, tyb = typed env b
+                let opId = Syntax.opName op |> Identifier.Id
+                match Map.tryFind opId env with
+                | None -> return! fail (UnknownSymbol opId)
+                | Some o ->
+                    let! _top, tyop = typed env o
+                    match tyop with
+                    | Type.Fun([atya; atyb], tret) when atya = tya && atyb = tyb ->
+                        return Syntax.BinOp(op, ta, tb), tret
+                    | _ -> return! fail TypeMismatch
+            }
+        | Syntax.LetIn(_, _, _) -> failwith "Not implemented yet"
+        | Syntax.If(_, _, _) -> failwith "Not implemented yet"
+        | Syntax.Var(v) ->
+            match Map.tryFind v env with
+            | None -> fail (UnknownSymbol v)
+            | Some vd -> typed env vd
+        | Syntax.FunDef(args, body, ret) ->
+            ok (x, Type.Fun(args |> List.map snd, ret))
+//            trial {
+//                let! tr, tyr = typed env body
+//            }
+        | Syntax.App(_, _) -> failwith "Not implemented yet"
+        | Syntax.Seq(_) -> failwith "Not implemented yet"
     let rec typing env a : TypingResult =
         match a with
         | Syntax.Unit -> ok Type.Unit
@@ -96,8 +133,8 @@ module Typing =
             }
         | Syntax.Var(vid) ->
             Map.tryFind vid env |> failIfNone (UnknownSymbol(vid))
-        | Syntax.FunDef(args, Syntax.FBody.Ext body) -> fail TypeMismatch
-        | Syntax.FunDef(args, Syntax.FBody.Body body) ->
+        | Syntax.FunDef(args, Syntax.FBody.Ext body, _ret) -> fail TypeMismatch
+        | Syntax.FunDef(args, Syntax.FBody.Body body, _ret) ->
             trial {
                 let targs = args |> List.map (snd)
 
@@ -125,7 +162,7 @@ module Interpreter =
             }
         | App(fid, fparams) ->
             match eval e fid with
-            | Ok ((FunDef (fargs, fbody)), _) ->
+            | Ok ((FunDef (fargs, fbody, _tret)), _) ->
                 match fbody with
                 | Body b ->
                     let ne = List.zip fargs fparams |> List.fold (fun env ((ai,_aty),fp) -> Map.add ai fp env) e
@@ -133,7 +170,7 @@ module Interpreter =
                 | Ext ext -> ok <| ext fparams
             | Ok _ -> fail ApplyNotFunction
             | Bad(_e) -> fail _e.Head
-        | FunDef(_fargs, _body) -> ok a
+        | FunDef(_fargs, _body, _tret) -> ok a
         | BinOp(op, l, r) ->
             let oid = (Identifier.Id <| sprintf "(%s)" op)
             eval e (App(Var oid, [l; r]))
