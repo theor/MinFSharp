@@ -8,25 +8,26 @@ module Parser =
     open MinFSharp
     open MinFSharp.Syntax
 
-    type ParsingError = string
+    type ParsingError = string * UserState
 
     type ParsingResult<'U> = Result<Syntax.t<'U>, ParsingError>
 
     let keywords = Set([ "="; "let"; "in"; "if"; "then"; "else" ])
-    let ws = many (anyOf " \t")// spaces
+    let ws = many (anyOf " \t") <!> "ws"// spaces
+    let ws1 = many1 (anyOf " \t") <!> "ws1"// spaces
     let nws = spaces
     let pstringws s = skipString s <!> ("pstringws '" + s + "'") .>> ws
     let str = pstringws
     let strn s = pstring s .>> nws
 
-    let parse (s : string) : ParsingResult<'U> =
+    let parseU (f:UserState -> Unit) (s : string) : ParsingResult<'U> =
         let pInt = pint32 |>> Syntax.Int <!> "pInt"
         let pBool = stringReturn "true" (Syntax.Bool true) <|> stringReturn "false" (Syntax.Bool false) <!> "pBool"
         let pId =
             many1Satisfy2 isLetter (fun c -> isLetter c || isDigit c)
             >>= (fun x ->
             if keywords.Contains x then fail "KEYWORD"
-            else preturn <| Identifier.Id x .>> ws)
+            else preturn <| Identifier.Id x)
             <!> "pId"
 
         let pExp, pExpImpl = createParserForwardedToRef()
@@ -49,10 +50,10 @@ module Parser =
                            | None -> Type.Var None
                            | Some (t) -> t
                        <!> "pOptTypeAnn"
-        let pDecVal = pId .>>. pOptTypeAnn .>> str "=" .>>. pExp |>> (fun ((id, t), exp) -> ((id, t), exp))
+        let pDecVal = pId .>> ws .>>. pOptTypeAnn .>> str "=" .>>. pExp |>> (fun ((id, t), exp) -> ((id, t), exp))
 
         let pFunArgs = many1 pId |>> List.map (fun x -> (x, Type.Var None))
-        let pDecFun = tuple4 pId pFunArgs (str "=") pExp |>> (fun (id, args, _, body) -> ((id, Type.Var None), Syntax.FunDef(args, FBody.Body body)))
+        let pDecFun = tuple4 pId pFunArgs (str "=") (pExp .>> ws) |>> (fun (id, args, _, body) -> ((id, Type.Var None), Syntax.FunDef(args, FBody.Body body)))
 
         let pDec = attempt pDecFun <|> pDecVal
         let pDeclist = pDec
@@ -66,11 +67,15 @@ module Parser =
                                   attempt (pId |>> Syntax.Var)
                                   attempt pParenExp
                                   pLet
-                                  ] .>> ws <!> "pSimpleExp"
-        let pAppExps = many1 pSimpleExp |>> (fun l -> if l.Length = 1 then l.Head else Syntax.App(l.Head, l.Tail)) <!> "pAppExps"
+                                  ] <!> "pSimpleExp"
+        let pAppExps = pSimpleExp .>>. opt (many (ws1 >>? pSimpleExp)) .>> ws
+                       |>> (fun (h,l) -> match l with
+                                         | None | Some [] -> h
+                                         | Some l -> Syntax.App(h, l))
+                       <!> "pAppExps"
         let pOpExp, pOpExpImpl = createParserForwardedToRef()
 
-        let pBinOp = attempt ( many1 (anyOf "!%&*+-./<=>@^|~?") ) .>> ws |>> (List.toArray >> System.String)
+        let pBinOp = attempt ( many1 (anyOf "!%&*+-./<=>@^|~?") ) .>> ws |>> (List.toArray >> System.String) <!> "pBinOp"
 
         let pBinOpApp = attempt (tuple3 pAppExps pBinOp pOpExp) |>> (fun (l,o,r) -> Syntax.BinOp(o, l, r))
         pOpExpImpl := choice [pBinOpApp; pAppExps] .>> ws
@@ -89,5 +94,6 @@ module Parser =
                                                               { Message = ""
                                                                 Indent = 0 } }) "" s
         match r with
-        | FParsec.CharParsers.Success(r, _u, _p) -> ok r
-        | Failure(e, _err, _pos) -> Chessie.ErrorHandling.Trial.fail e
+        | FParsec.CharParsers.Success(r, u, _p) -> f u; ok r
+        | Failure(e, (err), u) -> f u; Chessie.ErrorHandling.Trial.fail (e,u)
+    let parse s : ParsingResult<'U> = parseU ignore s

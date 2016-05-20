@@ -25,6 +25,7 @@ module ParserTests =
 //                d "=" (Var <| Id "=")
                 d "1<2" (BinOp("<", Int 1, Int 2))
                 d "1 <!> 2" (BinOp("<!>", Int 1, Int 2))
+                d "1<!>2" (BinOp("<!>", Int 1, Int 2))
                 d "1 >> 2" (BinOp(">>", Int 1, Int 2))
                 d "1 !@~<> 2" (BinOp("!@~<>", Int 1, Int 2))
                 d "f 42 13" (appId "f" [Int 42; Int 13])
@@ -79,9 +80,9 @@ module ParserTests =
             |]
 
     let testParseOk (s:string) (a:Syntax.t<Unit>) =
-        match MinFSharp.Parser.parse s with
+        match MinFSharp.Parser.parseU (printf "%A") s with
         | Ok(ast,_) -> printf "%A" ast; ast |> shouldEqual a
-        | Bad(e) -> failwith (e.ToString())
+        | Bad(e) ->  failwith (e.ToString())
 
     [<TestCaseSource(typeof<TCS>, "Data")>]
     let ``parsing tests`` (s:string,a:Syntax.t<Unit>) =
