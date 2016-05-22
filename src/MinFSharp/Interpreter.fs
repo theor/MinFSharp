@@ -5,8 +5,8 @@ module Interpreter =
     open Chessie.ErrorHandling
     open Chessie.ErrorHandling.Trial
     type EvalError = | AppNotFound of Identifier.t | OpNotFound of string | ApplyNotFunction
-    type EvalResult<'U> = Result<Syntax.t<'U>,EvalError>
-    let rec eval<'U> (e:Env.t<'U>)(a:Syntax.t<'U>) : EvalResult<'U> =
+    type EvalResult = Result<Syntax.t,EvalError>
+    let rec eval (e:Env.t)(a:Syntax.t) : EvalResult =
         match a with
         | Unit -> ok Unit
         | Bool(_) | Int(_) | Float(_) -> ok a

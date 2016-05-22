@@ -16,9 +16,9 @@ module Typing =
 
     type TypingResult = Result<Type.t, TypingError>
 
-    type TypedAstResult<'U> = Result<Syntax.t<'U> * Type.t, TypingError>
+    type TypedAstResult = Result<Syntax.t * Type.t, TypingError>
 
-    let rec typed<'U> (env:Env.t<'U>) x : TypedAstResult<'U> =
+    let rec typed (env:Env.t) x : TypedAstResult =
         match x with
         | Syntax.Unit -> ok (x, Type.Unit)
         | Syntax.Bool(_) -> ok (x, Type.Bool)

@@ -10,7 +10,7 @@ module Parser =
 
     type ParsingError = string * UserState
 
-    type ParsingResult<'U> = Result<Syntax.t<'U>, ParsingError>
+    type ParsingResult = Result<Syntax.t, ParsingError>
 
     let keywords = Set([ "="; "let"; "in"; "if"; "then"; "else" ])
     let ws = many (anyOf " \t") <!> "ws"// spaces
@@ -20,8 +20,8 @@ module Parser =
     let str = pstringws
     let strn s = pstring s .>> nws
 
-    let parseU (f:UserState -> Unit) (s : string) : ParsingResult<'U> =
-        let pInt = pint32 |>> Syntax.Int <!> "pInt"
+    let parseU (f:UserState -> Unit) (s : string) : ParsingResult =
+        let pInt = pint32 .>>. getPosition |>> (fun (i,p) ->Syntax.Int(i)) <!> "pInt"
         let pBool = stringReturn "true" (Syntax.Bool true) <|> stringReturn "false" (Syntax.Bool false) <!> "pBool"
         let pId =
             many1Satisfy2 isLetter (fun c -> isLetter c || isDigit c)
@@ -102,4 +102,4 @@ module Parser =
         match r with
         | FParsec.CharParsers.Success(r, u, _p) -> f u; ok r
         | Failure(e, (err), u) -> f u; Chessie.ErrorHandling.Trial.fail (e,u)
-    let parse s : ParsingResult<'U> = parseU ignore s
+    let parse s : ParsingResult = parseU ignore s

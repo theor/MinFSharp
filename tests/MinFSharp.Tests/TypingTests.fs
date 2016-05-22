@@ -11,9 +11,9 @@ module TypingTests =
     open FsUnitTyped
     open Chessie.ErrorHandling
 
-    let d ty (ast:Syntax.t<Unit>) =
+    let d ty (ast:Syntax.t) =
         TestCaseData(ast, ty, true).SetName(sprintf "%A" ast)
-    let f ty (ast:Syntax.t<Unit>) =
+    let f ty (ast:Syntax.t) =
         TestCaseData(ast, ty, false).SetName(sprintf "%A" ast)
     type Tcs() =
         static member Data() =
@@ -44,7 +44,7 @@ module TypingTests =
             |]// |> Array.map d
     [<Test>]
     [<TestCaseSource(typeof<Tcs>, "Data")>]
-    let ``test typing`` (ast:Syntax.t<Unit>) t passes =
+    let ``test typing`` (ast:Syntax.t) t passes =
         match passes, Typing.typed Env.newEnv ast with
         | true, Fail(e) -> printfn "%A" e; failwith "should pass"
         | false, Fail(e) -> printfn "%A" e

@@ -4,8 +4,11 @@ module Identifier =
     type t = Id of string
 
 module Syntax =
+//    [<CustomEquality;NoComparison>]
+    type Pos = Pos of FParsec.Position
+    let zeroPos = FParsec.Position(null, 0L, 0L, 0L)
     [<CustomEquality;NoComparison>]
-    type FBody<'U> = | Body of t<'U> | Ext of (t<'U> list -> t<'U>)
+    type FBody<'U when 'U : equality> = | Body of tt<'U> | Ext of (tt<'U> list -> tt<'U>)
     with
         override x.Equals(yobj) =
             match yobj with
@@ -18,21 +21,22 @@ module Syntax =
         override x.GetHashCode() = 0
 //    and Op = Lt | Gt | Eq | Ne
     and Op = string
-    and t<'U> =
+    and tt<'U when 'U : equality> =
     | Unit
     | Bool of bool
     | Int of int
     | Float of float
-    | BinOp of Op * t<'U> * t<'U>
+    | BinOp of Op * tt<'U> * tt<'U>
 //    | Let of (Identifier.t * Type.t) * t<'U>
-    | LetIn of (Identifier.t * Type.t) * t<'U> * (t<'U> option)
-    | If of t<'U> * t<'U> * t<'U>
+    | LetIn of (Identifier.t * Type.t) * tt<'U> * (tt<'U> option)
+    | If of tt<'U> * tt<'U> * tt<'U>
     | Var of Identifier.t
     | FunDef of (Identifier.t * Type.t) list * FBody<'U> * Type.t
-    | App of t<'U> * t<'U> list
-    | Seq of t<'U> list
+    | App of tt<'U> * tt<'U> list
+    | Seq of tt<'U> list
     with
         override x.ToString() = sprintf "%A" x
+    and t = tt<Pos>
 
     let opName (o:Op) = sprintf "(%s)" o
 

@@ -13,7 +13,7 @@ module ParserTests =
 
     let dn name str ast  =
         TestCaseData(str, ast).SetName(name)
-    let d str (ast:Syntax.t<Unit>)  =
+    let d str (ast:Syntax.t)  =
         TestCaseData(str, ast).SetName(str)
     let i (tcs:TestCaseData) = tcs.Ignore()
     type TCS() =
@@ -79,7 +79,7 @@ module ParserTests =
                                                    App (Var (Id "fact"),[BinOp ("-", Var (Id "n"),Int 1)])))), Type.Var None),None))
             |]
 
-    let testParseOk (s:string) (a:Syntax.t<Unit>) =
+    let testParseOk (s:string) (a:Syntax.t) =
         match MinFSharp.Parser.parseU (ignore (*printf "%A"*)) s with
         | Ok(ast,_) ->
             printf "%A" ast
@@ -92,7 +92,7 @@ module ParserTests =
 
     [<Test>]
     [<TestCaseSource(typeof<TCS>, "Data")>]
-    let ``parsing tests`` (s:string,a:Syntax.t<Unit>) =
+    let ``parsing tests`` (s:string,a:Syntax.t) =
         //FParsecTrace.print <- true
         testParseOk s a
 
