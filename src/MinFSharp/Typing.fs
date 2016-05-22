@@ -6,13 +6,16 @@ module Typing =
 
     type TypeMismatch = {expected:Type.t; actual: Type.t}
 
-    type TypingError =
+    type TypingErrorType =
         | UnknownError
         | UnknownSymbol of Identifier.t
         | TypeMismatch of TypeMismatch
-
+    type TypingError = Syntax.Pos * TypingErrorType
+        
+    let typeMismatchAt (exp:Type.t) (act:Type.t) (p:Syntax.Pos) =
+            p, TypingErrorType.TypeMismatch {expected = exp; actual = act}
     let typeMismatch (exp:Type.t) (act:Type.t) =
-            TypingError.TypeMismatch {expected = exp; actual = act}
+            Syntax.Pos.zero, TypingErrorType.TypeMismatch {expected = exp; actual = act}
 
     type TypingResult = Result<Type.t, TypingError>
 
@@ -52,7 +55,7 @@ module Typing =
             }
         | Syntax.Var(v) ->
             match Map.tryFind v env with
-            | None -> fail (UnknownSymbol v)
+            | None -> fail (Syntax.Pos.zero, UnknownSymbol v)
             | Some vd -> typed env vd
         | Syntax.FunDef(args, body, ret) ->
             ok (x, Type.arrow((args |> List.map snd) @ [ret]))
@@ -67,7 +70,7 @@ module Typing =
                     | Type.Fun(x, y), h::t when x = h -> return! typeArrow f y t
                     | Type.Fun(x, _), h::_ when x <> h -> return! fail <| typeMismatch x h
                     | t, [] -> return f, t
-                    | _ -> return! fail UnknownError
+                    | _ -> return! fail (Syntax.Pos.zero, UnknownError)
                 }
             trial {
                 let! func, tfunc = typed env func
@@ -88,7 +91,7 @@ module Typing =
             let! b, tyb = typed env b
             let opId = Syntax.opName op |> Identifier.Id
             match Map.tryFind opId env with
-            | None -> return! fail (UnknownSymbol opId)
+            | None -> return! fail (Syntax.Pos.zero, UnknownSymbol opId)
             | Some o ->
                 let! _top, tyop = typed env o
                 match tyop with
@@ -99,7 +102,7 @@ module Typing =
                         return! fail (typeMismatch atya tya)
                     else
                         return! fail (typeMismatch atyb tyb)
-                | Type.Fun(_args,_ret) -> return! fail (TypeMismatch {expected=Type.Var None; actual=tyop})
+                | Type.Fun(_args,_ret) -> return! fail (typeMismatchAt (Type.Var None) (tyop) ap)
                 | _ -> return! fail (typeMismatch (Type.arrow [tya; tyb; Type.Var None]) tyop)
         }
 
@@ -117,8 +120,8 @@ module Typing =
                 return! typing nEnv e
             }
         | Syntax.Var(vid) ->
-            Map.tryFind vid env |> failIfNone (UnknownSymbol(vid))
-        | Syntax.FunDef(args, Syntax.FBody.Ext body, _ret) -> fail UnknownError
+            Map.tryFind vid env |> failIfNone (Syntax.Pos.zero, UnknownSymbol(vid))
+        | Syntax.FunDef(args, Syntax.FBody.Ext body, _ret) -> fail (Syntax.Pos.zero,UnknownError)
         | Syntax.FunDef(args, Syntax.FBody.Body body, _ret) ->
             trial {
                 let targs = args |> List.map (snd)

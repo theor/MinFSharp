@@ -23,6 +23,7 @@ module TypingTests =
                d (Type.arrow[Type.Int; Type.Int; Type.Int]) (Var (Identifier.Id "(+)"))
                d (Type.arrow[Type.Int; Type.Int; Type.Int]) (Var (Identifier.Id "add"))
                d (Type.Int) (App(Var (Identifier.Id "add"), [Int 1; Int 2]))
+               f (Type.Int) (App(Var (Identifier.Id "add"), [Int 1; Float 2.0]))
                f (Type.Int) (App(Var (Identifier.Id "add"), [Int 1; Int 2; Int 3]))
                d (Type.arrow[Type.Int; Type.Int]) (App (Var (Identifier.Id "add"), [Int 1]))
 
@@ -36,6 +37,8 @@ module TypingTests =
 
                d Type.Int (LetIn((Id("x"),Type.Var None), (Int 3), Some <| Int 42))
                d Type.Int (LetIn((Id("x"),Type.Var None), (Int 3), Some <| varId "x"))
+               d Type.Int (LetIn((Id("x"),Type.Var None), (Int 3), 
+               Some <| varId "x"))
                f Type.Int (LetIn((Id("x"),Type.Unit), (Int 3), Some <| varId "x"))
 
                d Type.Int (If(Bool true, Int 3, Int 4))
