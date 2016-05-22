@@ -35,7 +35,8 @@ module TypingTests =
                f Type.Int (BinOp("+", Int 42, Float 42.0))
 
                d Type.Int (LetIn((Id("x"),Type.Var None), (Int 3), Some <| Int 42))
-               d Type.Int (LetIn((Id("x"),Type.Unit), (Int 3), Some << Var <| Id "x"))
+               d Type.Int (LetIn((Id("x"),Type.Var None), (Int 3), Some <| varId "x"))
+               f Type.Int (LetIn((Id("x"),Type.Unit), (Int 3), Some <| varId "x"))
 
                d Type.Int (If(Bool true, Int 3, Int 4))
                f Type.Int (If(Bool true, Float 4.0, Int 4))
@@ -47,7 +48,7 @@ module TypingTests =
         match passes, Typing.typed Env.newEnv ast with
         | true, Fail(e) -> printfn "%A" e; failwith "should pass"
         | false, Fail(e) -> printfn "%A" e
-        | false, Pass(ast, ty) -> failwith "should fail"
+        | false, Pass(ast, ty) -> printfn "res:%A\n" ast; failwith "should fail"
         | true, Pass(ast, ty) ->
             printf "%O\n" ty
             printf "%O\n" ast

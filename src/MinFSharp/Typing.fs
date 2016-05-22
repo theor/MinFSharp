@@ -36,7 +36,10 @@ module Typing =
                 | None -> return Syntax.LetIn((vid, tyVa), va, None), Type.Unit
                 | Some ins ->
                     let! ins, tyIns = typed newEnv ins
-                    return Syntax.LetIn((vid, tyVa), va, Some ins), tyIns
+                    match vty with
+                    | Type.Var None -> return Syntax.LetIn((vid, tyVa), va, Some ins), tyIns
+                    | t when t = tyVa -> return Syntax.LetIn((vid, tyVa), va, Some ins), tyIns
+                    | _ -> return! fail <| typeMismatch tyVa vty
             }
         | Syntax.If(cond, ethen, eelse) ->
             trial {
