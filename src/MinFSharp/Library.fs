@@ -6,7 +6,7 @@ module Type =
     | Bool
     | Int
     | Float
-    | Fun of t list * t (* arguments are uncurried *)
+    | Fun of t * t
     | Tuple of t list
     | Array of t
     | Var of string option
@@ -14,11 +14,18 @@ module Type =
         override x.ToString() =
             let tstr x = x.ToString()
             match x with
-            | Fun(l, r) -> l @ [r] |> List.map tstr |> String.concat " -> "
+            | Fun(l, r) -> [l;r] |> List.map tstr |> String.concat " -> "
             | Tuple(l) -> l |> List.map tstr |> String.concat " * "
             | Array(t) -> sprintf "%O array" t
             | Var(t) -> sprintf "'%O" t
             | _ -> sprintf "%A" x
+    let rec arrow l =
+        match l with
+        | [] -> failwith "ARROW"
+        | t :: [] -> t
+        | t1 :: t2 -> Fun(t1, arrow t2)
+    let arrowr l r = arrow(l @ [r])
+
 
 module Identifier =
     type t = Id of string
@@ -108,15 +115,15 @@ module Typing =
                 | Some o ->
                     let! _top, tyop = typed env o
                     match tyop with
-                    | Type.Fun([atya; atyb], tret) when atya = tya && atyb = tyb ->
+                    | Type.Fun(atya, Type.Fun(atyb, tret)) when atya = tya && atyb = tyb ->
                         return Syntax.BinOp(op, a, b), tret
-                    | Type.Fun([atya; atyb], tret) when atya <> tya || atyb <> tyb ->
+                    | Type.Fun(atya, Type.Fun(atyb, tret)) when atya <> tya || atyb <> tyb ->
                         if atya <> tya then
                             return! fail (typeMismatch atya tya)
                         else
                             return! fail (typeMismatch atyb tyb)
                     | Type.Fun(_args,_ret) -> return! fail (TypeMismatch {expected=Type.Var None; actual=tyop})
-                    | _ -> return! fail (typeMismatch (Type.Fun([tya; tyb], Type.Var None)) tyop)
+                    | _ -> return! fail (typeMismatch (Type.arrow [tya; tyb; Type.Var None]) tyop)
             }
         | Syntax.LetIn(_, _, _) -> failwith "Not implemented yet"
         | Syntax.If(cond, ethen, eelse) ->
@@ -133,7 +140,7 @@ module Typing =
             | None -> fail (UnknownSymbol v)
             | Some vd -> typed env vd
         | Syntax.FunDef(args, body, ret) ->
-            ok (x, Type.Fun(args |> List.map snd, ret))
+            ok (x, Type.arrow((args |> List.map snd) @ [ret]))
 //            trial {
 //                let! tr, tyr = typed env body
 //            }
@@ -143,14 +150,15 @@ module Typing =
                 let! typedArgs = args |> List.map (typed env) |> Trial.collect
                 let args, targs = List.unzip typedArgs
                 printfn "%A" targs
-                match tfunc with
-                | Type.Fun(fargs, fret) when fargs.Length >= targs.Length ->
-                    if Seq.zip targs fargs |> Seq.toList |> List.forall (fun (a,b) -> a = b)
-                    then return Syntax.App(func, args), fret
-                    else return! fail <| typeMismatch (Type.Fun(targs, Type.Var None)) tfunc
-//                | Type.Fun(fargs, fret) ->
-//                    return Syntax.App(func, args), fret
-                | _ -> return! fail <| typeMismatch (Type.Fun(targs, Type.Var None)) tfunc
+//                match tfunc with
+//                | Type.Fun(fargs, fret) when fargs.Length >= targs.Length ->
+//                    if Seq.zip targs fargs |> Seq.toList |> List.forall (fun (a,b) -> a = b)
+//                    then return Syntax.App(func, args), fret
+//                    else return! fail <| typeMismatch (Type.Fun(targs, Type.Var None)) tfunc
+////                | Type.Fun(fargs, fret) ->
+////                    return Syntax.App(func, args), fret
+//                | _ -> return! fail <| typeMismatch (Type.Fun(targs, Type.Var None)) tfunc
+                return! fail UnknownError
             }
         | Syntax.Seq(_) -> failwith "Not implemented yet"
     let rec typing env a : TypingResult =
@@ -174,7 +182,7 @@ module Typing =
                 let targs = args |> List.map (snd)
 
                 let! tvody = typing env body
-                return Type.Fun(targs, tvody)
+                return Type.arrowr targs tvody
             }
         | Syntax.App(_, _) -> failwith "Not implemented yet"
         | Syntax.Seq l -> l |> List.map (typing env) |> Trial.collect |> Trial.bind (Seq.last >> ok)

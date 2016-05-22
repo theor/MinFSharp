@@ -44,7 +44,10 @@ module Parser =
                         .>> ws .>>. (opt <| str "array")
                         |>> (fun (t, arr) -> if Option.isNone arr then t else Type.Array t)
         let pTypeTuple = sepBy1 pTypeAnn (str "*") |>> (fun l -> if l.Length = 1 then l.Head else Type.Tuple l)
-        let pTypeFun = sepBy pTypeTuple (str "->") |>> (fun l -> if l.Length = 1 then l.Head else let n = List.length l in Type.Fun(List.take (n-1) l, List.item (n-1) l))
+        let pTypeFun = sepBy pTypeTuple (str "->")
+                       |>> (fun l ->
+                            if l.Length = 1 then l.Head else
+                            Type.arrow l)
         let pOptTypeAnn = opt (str ":" >>. pTypeFun .>> ws)
                        |>> function
                            | None -> Type.Var None
@@ -52,7 +55,8 @@ module Parser =
                        <!> "pOptTypeAnn"
         let pDecVal = pId .>> ws .>>. pOptTypeAnn .>> str "=" .>>. pExp |>> (fun ((id, t), exp) -> ((id, t), exp))
 
-        let pFunArgs = many1 (pId .>>? ws1) |>> List.map (fun x -> (x, Type.Var None))
+        let pFunArgs = many1 (pId .>>? ws1)
+                       |>> List.map (fun x -> (x, Type.Var None))
         let pDecFun = tuple4 (pId .>>? ws1) pFunArgs (str "=") (pExp .>> ws)
                       |>> (fun (id, args, _, body) -> ((id, Type.Var None), Syntax.FunDef(args, FBody.Body body, Type.Var None)))
                       <!> "pDecFun"
