@@ -80,10 +80,17 @@ module ParserTests =
             |]
 
     let testParseOk (s:string) (a:Syntax.t<Unit>) =
-        match MinFSharp.Parser.parseU (printf "%A") s with
-        | Ok(ast,_) -> printf "%A" ast; ast |> shouldEqual a
+        match MinFSharp.Parser.parseU (ignore (*printf "%A"*)) s with
+        | Ok(ast,_) ->
+            printf "%A" ast
+            ast |> shouldEqual a
+            trial {
+                let! typed = Typing.typed Env.newEnv ast
+                do printfn "\n\nTYPED:\n%A" typed
+            }
         | Bad(e) ->  failwith (e.ToString())
 
+    [<Test>]
     [<TestCaseSource(typeof<TCS>, "Data")>]
     let ``parsing tests`` (s:string,a:Syntax.t<Unit>) =
         //FParsecTrace.print <- true

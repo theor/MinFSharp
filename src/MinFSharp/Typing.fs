@@ -1,17 +1,21 @@
 ﻿namespace MinFSharp
 
-
 module Typing =
     open Chessie.ErrorHandling
     open Chessie.ErrorHandling.Trial
+
     type TypeMismatch = {expected:Type.t; actual: Type.t}
+
     type TypingError =
         | UnknownError
         | UnknownSymbol of Identifier.t
         | TypeMismatch of TypeMismatch
+
     let typeMismatch (exp:Type.t) (act:Type.t) =
             TypingError.TypeMismatch {expected = exp; actual = act}
+
     type TypingResult = Result<Type.t, TypingError>
+
     type TypedAstResult<'U> = Result<Syntax.t<'U> * Type.t, TypingError>
 
     let rec typed<'U> (env:Env.t<'U>) x : TypedAstResult<'U> =
@@ -20,27 +24,20 @@ module Typing =
         | Syntax.Bool(_) -> ok (x, Type.Bool)
         | Syntax.Int(_) -> ok (x, Type.Int)
         | Syntax.Float(_) -> ok (x, Type.Float)
-        | Syntax.BinOp(op, a, b) ->
+        | Syntax.BinOp(op, a, b) -> typedBinOp env op a b
+            
+        | Syntax.LetIn((vid, vty), va, insOpt) ->
             trial {
-                let! a, tya = typed env a
-                let! b, tyb = typed env b
-                let opId = Syntax.opName op |> Identifier.Id
-                match Map.tryFind opId env with
-                | None -> return! fail (UnknownSymbol opId)
-                | Some o ->
-                    let! _top, tyop = typed env o
-                    match tyop with
-                    | Type.Fun(atya, Type.Fun(atyb, tret)) when atya = tya && atyb = tyb ->
-                        return Syntax.BinOp(op, a, b), tret
-                    | Type.Fun(atya, Type.Fun(atyb, tret)) when atya <> tya || atyb <> tyb ->
-                        if atya <> tya then
-                            return! fail (typeMismatch atya tya)
-                        else
-                            return! fail (typeMismatch atyb tyb)
-                    | Type.Fun(_args,_ret) -> return! fail (TypeMismatch {expected=Type.Var None; actual=tyop})
-                    | _ -> return! fail (typeMismatch (Type.arrow [tya; tyb; Type.Var None]) tyop)
+                let! va, tyVa = typed env va
+//                match vty with
+//                | Type.Var (Some x)
+                let newEnv = env |> Map.add vid va
+                match insOpt with
+                | None -> return Syntax.LetIn((vid, tyVa), va, None), Type.Unit
+                | Some ins ->
+                    let! ins, tyIns = typed newEnv ins
+                    return Syntax.LetIn((vid, tyVa), va, Some ins), tyIns
             }
-        | Syntax.LetIn(_, _, _) -> failwith "Not implemented yet"
         | Syntax.If(cond, ethen, eelse) ->
             trial {
                 let! cond, tcond = typed env cond
@@ -75,17 +72,30 @@ module Typing =
                 let args, targs = List.unzip typedArgs
                 printfn "%A" targs
                 return! typeArrow func tfunc targs
-//                match tfunc with
-//                | Type.Fun(fargs, fret) when fargs.Length >= targs.Length ->
-//                    if Seq.zip targs fargs |> Seq.toList |> List.forall (fun (a,b) -> a = b)
-//                    then return Syntax.App(func, args), fret
-//                    else return! fail <| typeMismatch (Type.Fun(targs, Type.Var None)) tfunc
-////                | Type.Fun(fargs, fret) ->
-////                    return Syntax.App(func, args), fret
-//                | _ -> return! fail <| typeMismatch (Type.Fun(targs, Type.Var None)) tfunc
-//                return! fail UnknownError
             }
         | Syntax.Seq(_) -> failwith "Not implemented yet"
+
+    and typedBinOp (env) op a b =
+        trial {
+            let! a, tya = typed env a
+            let! b, tyb = typed env b
+            let opId = Syntax.opName op |> Identifier.Id
+            match Map.tryFind opId env with
+            | None -> return! fail (UnknownSymbol opId)
+            | Some o ->
+                let! _top, tyop = typed env o
+                match tyop with
+                | Type.Fun(atya, Type.Fun(atyb, tret)) when atya = tya && atyb = tyb ->
+                    return Syntax.BinOp(op, a, b), tret
+                | Type.Fun(atya, Type.Fun(atyb, tret)) when atya <> tya || atyb <> tyb ->
+                    if atya <> tya then
+                        return! fail (typeMismatch atya tya)
+                    else
+                        return! fail (typeMismatch atyb tyb)
+                | Type.Fun(_args,_ret) -> return! fail (TypeMismatch {expected=Type.Var None; actual=tyop})
+                | _ -> return! fail (typeMismatch (Type.arrow [tya; tyb; Type.Var None]) tyop)
+        }
+
     let rec typing env a : TypingResult =
         match a with
         | Syntax.Unit -> ok Type.Unit

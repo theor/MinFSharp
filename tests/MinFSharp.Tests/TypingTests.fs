@@ -26,10 +26,15 @@ module TypingTests =
                f (Type.Int) (App(Var (Identifier.Id "add"), [Int 1; Int 2; Int 3]))
                d (Type.arrow[Type.Int; Type.Int]) (App (Var (Identifier.Id "add"), [Int 1]))
 
+               d (Type.Fun(Type.var "a", Type.var "a"))
+                 (Syntax.FunDef([Identifier.Id "x", Type.Var None],
+                                Syntax.FBody.Body(Syntax.varId "x"),
+                                Type.Var None))
+
                d Type.Int (BinOp("+", Int 42, Int 42))
                f Type.Int (BinOp("+", Int 42, Float 42.0))
 
-               d Type.Int (LetIn((Id("x"),Type.Unit), (Int 3), Some <| Int 42))
+               d Type.Int (LetIn((Id("x"),Type.Var None), (Int 3), Some <| Int 42))
                d Type.Int (LetIn((Id("x"),Type.Unit), (Int 3), Some << Var <| Id "x"))
 
                d Type.Int (If(Bool true, Int 3, Int 4))
