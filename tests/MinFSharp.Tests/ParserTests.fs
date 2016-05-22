@@ -24,9 +24,9 @@ module ParserTests =
                 d "x-1" (BinOp("-", varId "x" @@ (1L,1L), Int 1 @@(1L,3L)))
 //                d "=" (Var <| Id "=")
                 d "1<2" (BinOp("<", Int 1 @@ (1L,1L), Int 2 @@ (1L,3L)))
-                d "1 <!> 2" (BinOp("<!>", Int 1 @@ (1L,1L), Int 2 @@ (1L,6L)))
-                d "1<!>2" (BinOp("<!>", Int 1 @@ (1L,1L), Int 2 @@ (1L,3L)))
-                d "1 >> 2" (BinOp(">>", Int 1 @@ (1L,1L), Int 2 @@ (1L,5L)))
+                d "1 <!> 2" (BinOp("<!>", Int 1 @@ (1L,1L), Int 2 @@ (1L,7L)))
+                d "1<!>2" (BinOp("<!>", Int 1 @@ (1L,1L), Int 2 @@ (1L,5L)))
+                d "1 >> 2" (BinOp(">>", Int 1 @@ (1L,1L), Int 2 @@ (1L,6L)))
                 d "1 !@~<> 2" (BinOp("!@~<>", Int 1 @@ (1L,1L), Int 2 @@ (1L,9L)))
                 d "f 42 13" (appId "f" [Int 42; Int 13])
                 d "(f 42 13)" (appId "f" [Int 42; Int 13])
@@ -52,7 +52,7 @@ module ParserTests =
                 d "if (f 42) then 1 else 2" (If((appId "f" [Int 42]), Int 1, Int 2))
                 d "let min x y = if x < y then x else y" (LetIn((Id "min", Type.Var None),
                                                                 (FunDef([(Id "x", Type.Var None);(Id "y", Type.Var None)],
-                                                                        FBody.Body ((If (BinOp ("<",Var (Id "x") @= Pos.zero, Var (Id "y") @= Pos.zero),
+                                                                        FBody.Body ((If (BinOp ("<",Var (Id "x") @@ (1L,18L), Var (Id "y")@@ (1L,22L)),
                                                                                          Var (Id "x"),
                                                                                          Var (Id "y")))), Type.Var None)),
                                                                 None))
@@ -64,21 +64,22 @@ module ParserTests =
                      else n * (fact (n - 1))"
                    (LetIn((Id "fact", Type.Var None),
                           FunDef([(Id "n", Type.Var None)],
-                                 Body(If(BinOp ("<=",Var (Id "n") @= Pos.zero,Int 1 @= Pos.zero),
+                                 Body(If(BinOp ("<=",Var (Id "n") @@ (1L,16L),Int 1 @@ (1L,21L)),
                                          Int 1,
-                                         BinOp("*",Var (Id "n") @= Pos.zero,
+                                         BinOp("*",Var (Id "n") @@ (2L,27L),
                                                    App (Var (Id "fact"),
-                                                        [BinOp ("-", Var (Id "n") @= Pos.zero, Int 1 @= Pos.zero)]) @= Pos.zero))),
+                                                        [BinOp ("-", Var (Id "n") @@ (2L,38L), Int 1 @@ (2L,42L))]) @@ (2L,31L)))),
                                  Type.Var None),None))
                 d "let fact n =\
                      if n <= 1 then 1
                      else n * (fact (n-1))"
                    (LetIn((Id "fact", Type.Var None),
                           FunDef([(Id "n", Type.Var None)],
-                                 Body(If(BinOp ("<=",Var (Id "n") @= Pos.zero,Int 1 @= Pos.zero),
+                                 Body(If(BinOp ("<=",Var (Id "n") @@ (1L,16L),Int 1 @@ (1L,21L)),
                                          Int 1,
-                                         BinOp("*",Var (Id "n") @= Pos.zero,
-                                                   App (Var (Id "fact"),[BinOp ("-", Var (Id "n") @= Pos.zero,Int 1 @= Pos.zero)]) @= Pos.zero))),
+                                         BinOp("*",Var (Id "n") @@ (2L,27L),
+                                                   App (Var (Id "fact"),
+                                                        [BinOp ("-", Var (Id "n") @@ (2L,38L), Int 1 @@ (2L,40L))]) @@ (2L,31L)))),
                                  Type.Var None),None))
             |]
 

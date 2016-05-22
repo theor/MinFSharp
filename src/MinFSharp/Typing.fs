@@ -76,7 +76,11 @@ module Typing =
                 printfn "%A" targs
                 return! typeArrow func tfunc targs
             }
-        | Syntax.Seq(_) -> failwith "Not implemented yet"
+        | Syntax.Seq(s) ->
+            trial {
+                let! ts = s |> List.map (typed env) |> Trial.collect
+                return Syntax.Seq(ts |> List.map fst), (if ts.Length = 0 then Type.Unit else List.last ts |> snd)
+            }
 
     and typedBinOp (env) op (ap, a) (bp, b) =
         trial {

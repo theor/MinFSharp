@@ -5,10 +5,10 @@ module Identifier =
 
 module Syntax =
 //    [<CustomEquality;NoComparison>]
-    type Pos = Pos of FParsec.Position
+    type Pos = {line:int64; col:int64}
     with
-        static member from(p:FParsec.Position) = Pos p
-        static member from(l,c) = Pos (FParsec.Position("", 0L, l, c))
+        static member from(p:FParsec.Position) = {line=p.Line; col=p.Column}
+        static member from(l,c) = {line=l; col=c}
         static member zero = Pos.from(0L, 0L)
     let zeroPos = FParsec.Position(null, 0L, 0L, 0L)
     [<CustomEquality;NoComparison>]
