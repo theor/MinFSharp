@@ -27,7 +27,7 @@ module Interpreter =
             | Ok _ -> fail ApplyNotFunction
             | Bad(_e) -> fail _e.Head
         | FunDef(_fargs, _body, _tret) -> ok a
-        | BinOp(op, l, r) ->
+        | BinOp(op, (lp,l), (rp,r)) ->
             let oid = (Identifier.Id <| sprintf "(%s)" op)
             eval e (App(Var oid, [l; r]))
         | LetIn(_, _, _) -> failwith "Not implemented yet"

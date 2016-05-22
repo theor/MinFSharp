@@ -21,13 +21,13 @@ module ParserTests =
             [|  d "42" (Int 42)
                 d "(42)" (Int 42)
                 d "x" (Var <| Id "x")
-                d "x-1" (BinOp("-", Var <| Id "x", Int 1))
+                d "x-1" (BinOp("-", varId "x" @@ (1L,1L), Int 1 @@(1L,3L)))
 //                d "=" (Var <| Id "=")
-                d "1<2" (BinOp("<", Int 1, Int 2))
-                d "1 <!> 2" (BinOp("<!>", Int 1, Int 2))
-                d "1<!>2" (BinOp("<!>", Int 1, Int 2))
-                d "1 >> 2" (BinOp(">>", Int 1, Int 2))
-                d "1 !@~<> 2" (BinOp("!@~<>", Int 1, Int 2))
+                d "1<2" (BinOp("<", Int 1 @@ (1L,1L), Int 2 @@ (1L,3L)))
+                d "1 <!> 2" (BinOp("<!>", Int 1 @@ (1L,1L), Int 2 @@ (1L,6L)))
+                d "1<!>2" (BinOp("<!>", Int 1 @@ (1L,1L), Int 2 @@ (1L,3L)))
+                d "1 >> 2" (BinOp(">>", Int 1 @@ (1L,1L), Int 2 @@ (1L,5L)))
+                d "1 !@~<> 2" (BinOp("!@~<>", Int 1 @@ (1L,1L), Int 2 @@ (1L,9L)))
                 d "f 42 13" (appId "f" [Int 42; Int 13])
                 d "(f 42 13)" (appId "f" [Int 42; Int 13])
                 d "(f (g 42) 13)" (App(Var(Id "f"), [appId "g" [Int 42]; Int 13]))
@@ -35,7 +35,7 @@ module ParserTests =
                                            Some <| Var(Id "x")))
                 d "let x = 1 in\nlet y = 2 in\n x+y" (LetIn(((Id "x"), Type.Var None), Int 1,
                                                             (LetIn(((Id "y"), Type.Var None), Int 2,
-                                                                   BinOp("+", Var(Id "x"), Var(Id "y"))|>Some))|>Some))
+                                                                   BinOp("+", Var(Id "x") @@ (3L,2L), Var(Id "y") @@ (3L,4L))|>Some))|>Some))
                 d "1;2" (Seq [Int 1; Int 2])
                 d "1\n2" (Seq [Int 1; Int 2])
                 d "let x : int = 7 in\nx" (LetIn(((Id "x"), Type.Int), Int 7,
@@ -52,7 +52,7 @@ module ParserTests =
                 d "if (f 42) then 1 else 2" (If((appId "f" [Int 42]), Int 1, Int 2))
                 d "let min x y = if x < y then x else y" (LetIn((Id "min", Type.Var None),
                                                                 (FunDef([(Id "x", Type.Var None);(Id "y", Type.Var None)],
-                                                                        FBody.Body ((If (BinOp ("<",Var (Id "x"),Var (Id "y")),
+                                                                        FBody.Body ((If (BinOp ("<",Var (Id "x") @= Pos.zero, Var (Id "y") @= Pos.zero),
                                                                                          Var (Id "x"),
                                                                                          Var (Id "y")))), Type.Var None)),
                                                                 None))
@@ -64,19 +64,22 @@ module ParserTests =
                      else n * (fact (n - 1))"
                    (LetIn((Id "fact", Type.Var None),
                           FunDef([(Id "n", Type.Var None)],
-                                 Body(If(BinOp ("<=",Var (Id "n"),Int 1),
+                                 Body(If(BinOp ("<=",Var (Id "n") @= Pos.zero,Int 1 @= Pos.zero),
                                          Int 1,
-                                         BinOp("*",Var (Id "n"),
-                                                   App (Var (Id "fact"),[BinOp ("-", Var (Id "n"),Int 1)])))), Type.Var None),None))
+                                         BinOp("*",Var (Id "n") @= Pos.zero,
+                                                   App (Var (Id "fact"),
+                                                        [BinOp ("-", Var (Id "n") @= Pos.zero, Int 1 @= Pos.zero)]) @= Pos.zero))),
+                                 Type.Var None),None))
                 d "let fact n =\
                      if n <= 1 then 1
                      else n * (fact (n-1))"
                    (LetIn((Id "fact", Type.Var None),
                           FunDef([(Id "n", Type.Var None)],
-                                 Body(If(BinOp ("<=",Var (Id "n"),Int 1),
+                                 Body(If(BinOp ("<=",Var (Id "n") @= Pos.zero,Int 1 @= Pos.zero),
                                          Int 1,
-                                         BinOp("*",Var (Id "n"),
-                                                   App (Var (Id "fact"),[BinOp ("-", Var (Id "n"),Int 1)])))), Type.Var None),None))
+                                         BinOp("*",Var (Id "n") @= Pos.zero,
+                                                   App (Var (Id "fact"),[BinOp ("-", Var (Id "n") @= Pos.zero,Int 1 @= Pos.zero)]) @= Pos.zero))),
+                                 Type.Var None),None))
             |]
 
     let testParseOk (s:string) (a:Syntax.t) =
@@ -94,13 +97,13 @@ module ParserTests =
     [<TestCaseSource(typeof<TCS>, "Data")>]
     let ``parsing tests`` (s:string,a:Syntax.t) =
         //FParsecTrace.print <- true
-        testParseOk s a
+        ignore <| testParseOk s a
 
     [<Test>]
     let ``fbody equality test`` () =
         let a = FunDef([(Id "n", Type.Var None)],
-                                 Body(If(BinOp ("<=",Var (Id "n"),Int 1),
+                                 Body(If(BinOp ("<=",Var (Id "n") @= Pos.zero, Int 1 @= Pos.zero),
                                          Int 1,
-                                         BinOp("*",Var (Id "n"),
-                                                   App (Var (Id "fact"),[BinOp ("-", Var (Id "n"),Int -1)])))), Type.Var None)
+                                         BinOp("*",Var (Id "n") @= Pos.zero,
+                                                   App (Var (Id "fact"),[BinOp ("-", Var (Id "n") @= Pos.zero,Int -1 @= Pos.zero)]) @= Pos.zero))), Type.Var None)
         a |> shouldEqual a

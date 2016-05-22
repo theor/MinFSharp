@@ -20,6 +20,9 @@ module Parser =
     let str = pstringws
     let strn s = pstring s .>> nws
 
+    let getPos = getPosition |>> Pos.from
+    let withPos p = getPos .>>. p
+
     let parseU (f:UserState -> Unit) (s : string) : ParsingResult =
         let pInt = pint32 .>>. getPosition |>> (fun (i,p) ->Syntax.Int(i)) <!> "pInt"
         let pBool = stringReturn "true" (Syntax.Bool true) <|> stringReturn "false" (Syntax.Bool false) <!> "pBool"
@@ -83,7 +86,8 @@ module Parser =
 
         let pBinOp = attempt ( many1 (anyOf "!%&*+-./<=>@^|~?") ) .>> ws |>> (List.toArray >> System.String) <!> "pBinOp"
 
-        let pBinOpApp = attempt (tuple3 pAppExps pBinOp pOpExp) |>> (fun (l,o,r) -> Syntax.BinOp(o, l, r))
+        let pBinOpApp = attempt (tuple3 (withPos pAppExps) pBinOp (withPos pOpExp))
+                        |>> (fun (l,o,r) -> Syntax.BinOp(o, l, r))
         pOpExpImpl := choice [pBinOpApp; pAppExps] .>> ws
                       <!> "pOpExp"
 

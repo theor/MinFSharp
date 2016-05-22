@@ -78,7 +78,7 @@ module Typing =
             }
         | Syntax.Seq(_) -> failwith "Not implemented yet"
 
-    and typedBinOp (env) op a b =
+    and typedBinOp (env) op (ap, a) (bp, b) =
         trial {
             let! a, tya = typed env a
             let! b, tyb = typed env b
@@ -89,7 +89,7 @@ module Typing =
                 let! _top, tyop = typed env o
                 match tyop with
                 | Type.Fun(atya, Type.Fun(atyb, tret)) when atya = tya && atyb = tyb ->
-                    return Syntax.BinOp(op, a, b), tret
+                    return Syntax.BinOp(op, (ap, a), (bp, b)), tret
                 | Type.Fun(atya, Type.Fun(atyb, tret)) when atya <> tya || atyb <> tyb ->
                     if atya <> tya then
                         return! fail (typeMismatch atya tya)

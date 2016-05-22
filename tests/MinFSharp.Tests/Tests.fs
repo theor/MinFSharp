@@ -45,5 +45,5 @@ module EvalTests =
         
     [<Test>]
     let ``binop app +``() =
-        let ast = BinOp("+", Int 3, Int 4)
+        let ast = BinOp("+", Int 3 @= Pos.zero, Int 4 @= Pos.zero)
         testEvalRes Env.newEnv ast (Int 7)

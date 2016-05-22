@@ -6,13 +6,17 @@ module Identifier =
 module Syntax =
 //    [<CustomEquality;NoComparison>]
     type Pos = Pos of FParsec.Position
+    with
+        static member from(p:FParsec.Position) = Pos p
+        static member from(l,c) = Pos (FParsec.Position("", 0L, l, c))
+        static member zero = Pos.from(0L, 0L)
     let zeroPos = FParsec.Position(null, 0L, 0L, 0L)
     [<CustomEquality;NoComparison>]
-    type FBody<'U when 'U : equality> = | Body of tt<'U> | Ext of (tt<'U> list -> tt<'U>)
+    type FBody = | Body of t | Ext of (t list -> t)
     with
         override x.Equals(yobj) =
             match yobj with
-            | :? FBody<'U> as y ->
+            | :? FBody as y ->
                 match x,y with
                 | Ext ex, Ext ey -> System.Object.ReferenceEquals(ex, ey)
                 | Body bx, Body by -> bx = by
@@ -21,35 +25,38 @@ module Syntax =
         override x.GetHashCode() = 0
 //    and Op = Lt | Gt | Eq | Ne
     and Op = string
-    and tt<'U when 'U : equality> =
+    and post = Pos * t
+    and t =
     | Unit
     | Bool of bool
     | Int of int
     | Float of float
-    | BinOp of Op * tt<'U> * tt<'U>
-//    | Let of (Identifier.t * Type.t) * t<'U>
-    | LetIn of (Identifier.t * Type.t) * tt<'U> * (tt<'U> option)
-    | If of tt<'U> * tt<'U> * tt<'U>
+    | BinOp of Op * post * post
+//    | Let of (Identifier.t * Type.t) * t
+    | LetIn of (Identifier.t * Type.t) * t * (t option)
+    | If of t * t * t
     | Var of Identifier.t
-    | FunDef of (Identifier.t * Type.t) list * FBody<'U> * Type.t
-    | App of tt<'U> * tt<'U> list
-    | Seq of tt<'U> list
+    | FunDef of (Identifier.t * Type.t) list * FBody * Type.t
+    | App of t * t list
+    | Seq of t list
     with
         override x.ToString() = sprintf "%A" x
-    and t = tt<Pos>
 
     let opName (o:Op) = sprintf "(%s)" o
 
     let varId s = Var(Identifier.Id s)
     let appId s args = App(Var(Identifier.Id s), args)
 
-    let map f s =
-        match s with
-        | Unit | Bool(_) | Int(_) | Float(_) | Var(_) -> f s
-        | BinOp(op, l, r) -> f (BinOp(op, f l, f r))
-        | LetIn((id,t), eval, ein) -> f (LetIn((id, t), f eval, Option.map f ein))
-        | If(cond, ethen, eelse) -> f (If(f cond, f ethen, f eelse))
-        | FunDef(args, Body body, ret) -> f(FunDef(args, f body |> Body, ret))
-        | FunDef(args, Ext ext, ret) -> f(FunDef(args, Ext ext, ret))
-        | App(fu, args) -> f(App(f fu, args |> List.map f))
-        | Seq stmts -> f(Seq(stmts |> List.map f))
+    let inline (@@) s (l:int64, c:int64) : post = (Pos.from(l, c), s)
+    let inline (@=) s (p:Pos) : post = (p, s)
+//    let inline (@@) s (l:int, c:int) : post = (Pos.from(int64 l, int64 c), s)
+//    let map f s =
+//        match s with
+//        | Unit | Bool(_) | Int(_) | Float(_) | Var(_) -> f s
+//        | BinOp(op, l, r) -> f (BinOp(op, f l, f r))
+//        | LetIn((id,t), eval, ein) -> f (LetIn((id, t), f eval, Option.map f ein))
+//        | If(cond, ethen, eelse) -> f (If(f cond, f ethen, f eelse))
+//        | FunDef(args, Body body, ret) -> f(FunDef(args, f body |> Body, ret))
+//        | FunDef(args, Ext ext, ret) -> f(FunDef(args, Ext ext, ret))
+//        | App(fu, args) -> f(App(f fu, args |> List.map f))
+//        | Seq stmts -> f(Seq(stmts |> List.map f))

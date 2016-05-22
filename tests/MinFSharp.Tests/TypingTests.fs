@@ -31,8 +31,8 @@ module TypingTests =
                                 Syntax.FBody.Body(Syntax.varId "x"),
                                 Type.Var None))
 
-               d Type.Int (BinOp("+", Int 42, Int 42))
-               f Type.Int (BinOp("+", Int 42, Float 42.0))
+               d Type.Int (BinOp("+", Int 42 @= Pos.zero, Int 42 @= Pos.zero))
+               f Type.Int (BinOp("+", Int 42 @= Pos.zero, Float 42.0 @= Pos.zero))
 
                d Type.Int (LetIn((Id("x"),Type.Var None), (Int 3), Some <| Int 42))
                d Type.Int (LetIn((Id("x"),Type.Var None), (Int 3), Some <| varId "x"))
