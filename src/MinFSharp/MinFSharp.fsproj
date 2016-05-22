@@ -63,7 +63,11 @@
       <Link>ErrorHandling.fs</Link>
     </Compile>
     <Compile Include="FParsecTrace.fs" />
-    <Compile Include="Library.fs" />
+    <Compile Include="Type.fs" />
+    <Compile Include="Syntax.fs" />
+    <Compile Include="Env.fs" />
+    <Compile Include="Typing.fs" />
+    <Compile Include="Interpreter.fs" />
     <Compile Include="Parser.fs" />
     <None Include="Script.fsx" />
     <None Include="paket.references" />

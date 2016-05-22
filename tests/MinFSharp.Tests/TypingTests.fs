@@ -18,9 +18,12 @@ module TypingTests =
     type Tcs() =
         static member Data() =
             [| d Type.Int (Int 42)
+               d (Type.Fun(Type.var "a", Type.var "a")) (Syntax.varId "id")
+
                d (Type.arrow[Type.Int; Type.Int; Type.Int]) (Var (Identifier.Id "(+)"))
                d (Type.arrow[Type.Int; Type.Int; Type.Int]) (Var (Identifier.Id "add"))
                d (Type.Int) (App(Var (Identifier.Id "add"), [Int 1; Int 2]))
+               f (Type.Int) (App(Var (Identifier.Id "add"), [Int 1; Int 2; Int 3]))
                d (Type.arrow[Type.Int; Type.Int]) (App (Var (Identifier.Id "add"), [Int 1]))
 
                d Type.Int (BinOp("+", Int 42, Int 42))
