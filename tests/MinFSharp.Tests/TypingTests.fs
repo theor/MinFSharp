@@ -43,9 +43,9 @@ module TypingTests =
                                  Some <| varId "x"))
                f Type.Int (LetIn((Id("x"),Type.Unit), (Int 3), Some <| varId "x"))
 
-               d Type.Int (If(Bool true, Int 3, Int 4))
-               f Type.Int (If(Bool true, Float 4.0, Int 4))
-               f Type.Int (If(Float 4.0, Int 4, Int 5))
+               d Type.Int (If(Bool true |> pz, Int 3 |> pz, Int 4 |> pz))
+               f Type.Int (If(Bool true |> pz, Float 4.0 |> pz, Int 4 |> pz))
+               f Type.Int (If(Float 4.0 |> pz, Int 4 |> pz, Int 5 |> pz))
             |]// |> Array.map d
     [<Test>]
     [<TestCaseSource(typeof<Tcs>, "Data")>]

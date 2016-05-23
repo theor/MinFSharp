@@ -33,7 +33,7 @@ module Syntax =
     | Float of float
     | BinOp of Op * post * post
     | LetIn of (Identifier.t * Type.t) * t * (t option)
-    | If of t * t * t
+    | If of post * post * post
     | Var of Identifier.t
     | FunDef of (Identifier.t * Type.t) list * FBody * Type.t
     | App of t * t list

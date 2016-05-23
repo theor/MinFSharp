@@ -91,7 +91,7 @@ module Parser =
                       <!> "pOpExp"
 
         let pIf =
-            str "if" >>. pOpExp .>> strn "then" .>>. pOpExp .>> nws .>> strn "else" .>> nws .>>. pOpExp
+            str "if" >>. (withPos pOpExp) .>> strn "then" .>>. (withPos pOpExp) .>> nws .>> strn "else" .>> nws .>>. (withPos pOpExp)
             |>> (fun ((eIf, eThen), eElse) -> Syntax.If(eIf, eThen, eElse))
             <!> "pIf"
         let pBlockExp = pIf <|> pOpExp <!> "pBlockExp"

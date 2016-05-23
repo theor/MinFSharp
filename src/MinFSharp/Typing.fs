@@ -44,14 +44,14 @@ module Typing =
                     | t when t = tyVa -> return Syntax.LetIn((vid, tyVa), va, Some ins), tyIns
                     | _ -> return! fail <| typeMismatch tyVa vty
             }
-        | Syntax.If(cond, ethen, eelse) ->
+        | Syntax.If((posCond,cond), (posThen, ethen), (posElse, eelse)) ->
             trial {
                 let! cond, tcond = typed env cond
                 if tcond <> Type.Bool then return! fail <| typeMismatch Type.Bool tcond
                 let! ethen, tthen = typed env ethen
                 let! eelse, telse = typed env eelse
                 if tthen <> telse then return! fail <| typeMismatch tthen telse
-                return Syntax.If(cond, ethen, eelse), tthen
+                return Syntax.If((posCond, cond), (posThen, ethen), (posElse, eelse)), tthen
             }
         | Syntax.Var(v) ->
             match Map.tryFind v env with
@@ -107,28 +107,28 @@ module Typing =
                 | _ -> return! fail (typeMismatch (Type.arrow [tya; tyb; Type.Var None]) tyop)
         }
 
-    let rec typing env a : TypingResult =
-        match a with
-        | Syntax.Unit -> ok Type.Unit
-        | Syntax.Bool(_) -> ok Type.Bool
-        | Syntax.Int(_) -> ok Type.Int
-        | Syntax.Float(_) -> ok Type.Float
-        | Syntax.LetIn((_vid,_), vval,None) ->  typing env vval
-        | Syntax.LetIn((vid,_), vval, Some e) ->
-            trial {
-                let! tVal = typing env vval
-                let nEnv = env |> Map.add vid tVal
-                return! typing nEnv e
-            }
-        | Syntax.Var(vid) ->
-            Map.tryFind vid env |> failIfNone (Syntax.Pos.zero, UnknownSymbol(vid))
-        | Syntax.FunDef(args, Syntax.FBody.Ext body, _ret) -> fail (Syntax.Pos.zero,UnknownError)
-        | Syntax.FunDef(args, Syntax.FBody.Body body, _ret) ->
-            trial {
-                let targs = args |> List.map (snd)
-
-                let! tvody = typing env body
-                return Type.arrowr targs tvody
-            }
-        | Syntax.App(_, _) -> failwith "Not implemented yet"
+//    let rec typing env a : TypingResult =
+//        match a with
+//        | Syntax.Unit -> ok Type.Unit
+//        | Syntax.Bool(_) -> ok Type.Bool
+//        | Syntax.Int(_) -> ok Type.Int
+//        | Syntax.Float(_) -> ok Type.Float
+//        | Syntax.LetIn((_vid,_), vval,None) ->  typing env vval
+//        | Syntax.LetIn((vid,_), vval, Some e) ->
+//            trial {
+//                let! tVal = typing env vval
+//                let nEnv = env |> Map.add vid tVal
+//                return! typing nEnv e
+//            }
+//        | Syntax.Var(vid) ->
+//            Map.tryFind vid env |> failIfNone (Syntax.Pos.zero, UnknownSymbol(vid))
+//        | Syntax.FunDef(args, Syntax.FBody.Ext body, _ret) -> fail (Syntax.Pos.zero,UnknownError)
+//        | Syntax.FunDef(args, Syntax.FBody.Body body, _ret) ->
+//            trial {
+//                let targs = args |> List.map (snd)
+//
+//                let! tvody = typing env body
+//                return Type.arrowr targs tvody
+//            }
+//        | Syntax.App(_, _) -> failwith "Not implemented yet"
 //        | Syntax.Seq l -> l |> List.map (typing env) |> Trial.collect |> Trial.bind (Seq.last >> ok)

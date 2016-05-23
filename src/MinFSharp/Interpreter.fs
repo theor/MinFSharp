@@ -31,7 +31,7 @@ module Interpreter =
             let oid = (Identifier.Id <| sprintf "(%s)" op)
             eval e (App(Var oid, [l; r]))
         | LetIn(_, _, _) -> failwith "Not implemented yet"
-        | If(eif, ethen, eelse) ->
+        | If((_posConf, eif), (_posThen, ethen), (_posElse, eelse)) ->
             trial {
                 let! rif = eval e eif
                 return! if rif = Bool true then eval e ethen else eval e eelse
