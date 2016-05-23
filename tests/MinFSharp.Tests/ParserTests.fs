@@ -109,7 +109,7 @@ module ParserTests =
             printf "%A" ast
             diff ast a
             ast |> shouldEqual a
-            let env = ref Env.newEnv
+            let env = ref Env.newTypeEnv
             trial {
                 let! typed = Typing.typed env ast
                 do printfn "\n\nTYPED:\n%A" typed

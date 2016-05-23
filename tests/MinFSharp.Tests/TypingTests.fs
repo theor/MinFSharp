@@ -50,7 +50,7 @@ module TypingTests =
     [<Test>]
     [<TestCaseSource(typeof<Tcs>, "Data")>]
     let ``test typing`` (ast:Syntax.t) t passes =
-        let env = ref Env.newEnv
+        let env = ref Env.newTypeEnv
         match passes, Typing.typed env ast with
         | true, Fail(e) -> printfn "%A" e; failwith "should pass"
         | false, Fail(e) -> printfn "%A" e

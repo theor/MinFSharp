@@ -6,14 +6,14 @@ module Interpreter =
     open Chessie.ErrorHandling.Trial
     type EvalError = | AppNotFound of Identifier.t | OpNotFound of string | ApplyNotFunction
     type EvalResult = Result<Syntax.t,EvalError>
-    let rec eval (e:Env.t)(a:Syntax.t) : EvalResult =
+    let rec eval (e:Env.Symbol)(a:Syntax.t) : EvalResult =
         match a with
         | Unit -> ok Unit
         | Bool(_) | Int(_) | Float(_) -> ok a
-        | LetIn(Decl(id,ty), value, Some body) -> eval (e |> Map.add id (ty,value)) body
+        | LetIn(Decl(id,ty), value, Some body) -> eval (e |> Map.add id value) body
         | Var(id) ->
             trial {
-                let! t,def = (Map.tryFind id e) |> failIfNone (AppNotFound id)
+                let! def = (Map.tryFind id e) |> failIfNone (AppNotFound id)
                 return! eval e def
             }
         | App(fid, fparams) ->
@@ -21,13 +21,13 @@ module Interpreter =
             | Ok ((FunDef (fargs, fbody, _tret)), _) ->
                 match fbody with
                 | Body b ->
-                    let ne = List.zip fargs fparams |> List.fold (fun env (Decl(ai,aty),fp) -> Map.add ai (aty,fp) env) e
+                    let ne = List.zip fargs fparams |> List.fold (fun env (Decl(ai,_aty),fp) -> Map.add ai fp env) e
                     eval ne b
                 | Ext ext -> ok <| ext fparams
             | Ok _ -> fail ApplyNotFunction
             | Bad(_e) -> fail _e.Head
         | FunDef(_fargs, _body, _tret) -> ok a
-        | BinOp(op, (lp,l), (rp,r)) ->
+        | BinOp(op, (_lp,l), (_rp,r)) ->
             let oid = (Identifier.Id <| sprintf "(%s)" op)
             eval e (App(Var oid, [l; r]))
         | LetIn(_, _, _) -> failwith "Not implemented yet"

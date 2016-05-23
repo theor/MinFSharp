@@ -106,5 +106,5 @@ module Parser =
                                                                 Indent = 0 } }) "" s
         match r with
         | FParsec.CharParsers.Success(r, u, _p) -> f u; ok r
-        | Failure(e, (err), u) -> f u; Chessie.ErrorHandling.Trial.fail (e,u)
+        | Failure(e, (_err), u) -> f u; Chessie.ErrorHandling.Trial.fail (e,u)
     let parse s : ParsingResult = parseU ignore s
