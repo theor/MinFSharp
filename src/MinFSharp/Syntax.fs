@@ -36,13 +36,14 @@ module Syntax =
     | LetIn of id:VarDecl * value:t * scope:(t option)
     | If of post * post * post
     | Var of Identifier.t
-    | FunDef of args:(Identifier.t * Type.t) list * body:FBody * ty:Type.t
+    | FunDef of args:VarDecl list * body:FBody * ty:Type.t
     | App of t * t list
     | Seq of post list
     with
         override x.ToString() = sprintf "%A" x
 
     let opName (o:Op) = sprintf "(%s)" o
+    let declType (Decl(_id, ty)) = ty
 
     let varId s = Var(Identifier.Id s)
     let appId s args = App(Var(Identifier.Id s), args)

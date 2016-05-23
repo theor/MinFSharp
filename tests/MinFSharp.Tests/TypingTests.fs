@@ -30,7 +30,7 @@ module TypingTests =
                d (Type.arrow[Type.Int; Type.Int]) (App (Var (Identifier.Id "add"), [Int 1]))
 
                d (Type.Fun(Type.var "a", Type.var "a"))
-                 (Syntax.FunDef([Identifier.Id "x", Type.Var None],
+                 (Syntax.FunDef([Syntax.Decl(Identifier.Id "x", Type.Var None)],
                                 Syntax.FBody.Body(Syntax.varId "x"),
                                 Type.Var None))
 

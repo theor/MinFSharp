@@ -58,13 +58,13 @@ module Typing =
             | None -> fail (Syntax.Pos.zero, UnknownSymbol v)
             | Some vd -> typed env vd
         | Syntax.FunDef(args, Syntax.FBody.Ext body, ret) ->
-            ok (x, Type.arrow((args |> List.map snd) @ [ret]))
+            ok (x, Type.arrow((args |> List.map Syntax.declType) @ [ret]))
         | Syntax.FunDef(args, Syntax.FBody.Body body, ret) ->
             trial {
 //                let newEnv = args |> List.fold(fun e (argId,argTy) -> e |> Map.add argId (Syntax.Var())) env
                 
                 let! tr, tyr = typed env body
-                return (x, Type.arrow((args |> List.map snd) @ [ret]))
+                return (x, Type.arrow((args |> List.map Syntax.declType) @ [ret]))
             }
         | Syntax.App(func, args) ->
             let rec typeArrow f tf args =
