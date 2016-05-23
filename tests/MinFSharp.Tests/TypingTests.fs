@@ -30,20 +30,20 @@ module TypingTests =
                d (Type.arrow[Type.Int; Type.Int]) (App (Var (Identifier.Id "add"), [Int 1]))
 
                d (Type.Fun(Type.Poly 0u, Type.Poly 0u))
-                 (Syntax.FunDef([Syntax.Decl(Identifier.Id "x", Type.Var None)],
+                 (Syntax.FunDef([Syntax.Decl(Identifier.Id "x", Type.genType)],
                                 Syntax.FBody.Body(Syntax.varId "x"),
-                                Type.Var None))
+                                Type.genType))
                d (Type.Fun(Type.Poly 0u, Type.Poly 0u))
-                 (Syntax.FunDef([Syntax.Decl(Identifier.Id "x", Type.Var None)],
+                 (Syntax.FunDef([Syntax.Decl(Identifier.Id "x", Type.genType)],
                                 Syntax.FBody.Body(Syntax.BinOp("+", pz <| Syntax.varId "x", pz <| Syntax.varId "x")),
-                                Type.Var None))
+                                Type.genType))
 
                d Type.Int (BinOp("+", pz <| Int 42, pz <| Int 42))
                f Type.Int (BinOp("+", pz <| Int 42, pz <| Float 42.0))
 
-               d Type.Int (LetIn(Syntax.Decl(Id("x"),Type.Var None), (Int 3), Some <| Int 42))
-               d Type.Int (LetIn(Syntax.Decl(Id("x"),Type.Var None), (Int 3), Some <| varId "x"))
-               d Type.Int (LetIn(Syntax.Decl(Id("x"),Type.Var None), (Int 3),
+               d Type.Int (LetIn(Syntax.Decl(Id("x"),Type.genType), (Int 3), Some <| Int 42))
+               d Type.Int (LetIn(Syntax.Decl(Id("x"),Type.genType), (Int 3), Some <| varId "x"))
+               d Type.Int (LetIn(Syntax.Decl(Id("x"),Type.genType), (Int 3),
                                  Some <| varId "x"))
                f Type.Int (LetIn(Syntax.Decl(Id("x"),Type.Unit), (Int 3), Some <| varId "x"))
 

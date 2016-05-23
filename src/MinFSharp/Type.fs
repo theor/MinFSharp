@@ -10,7 +10,7 @@ module Type =
     | Tuple of t list
     | Array of t
     | Poly of uint32
-    | Var of t option
+    | Var of t option ref
     with
         override x.ToString() =
             let tstr x = x.ToString()
@@ -26,4 +26,5 @@ module Type =
         | t :: [] -> t
         | t1 :: t2 -> Fun(t1, arrow t2)
     let arrowr l r = arrow(l @ [r])
-    let var s = s |> Some |> Var
+    let var s = s |> Some |> ref |> Var
+    let genType = Var(ref None)

@@ -35,12 +35,12 @@ module EvalTests =
 
     [<Test>]
     let ``function app``() =
-        let ast = App((FunDef([Syntax.Decl(Id "x", Type.Int)], Body(Var(Id "x")), Type.Var None)), [ Int 13 ])
+        let ast = App((FunDef([Syntax.Decl(Id "x", Type.Int)], Body(Var(Id "x")), Type.genType)), [ Int 13 ])
         testEvalRes Env.newSymbolEnv ast (Int 13)
 
     [<Test>]
     let ``function app 2``() =
-        let ast = App((FunDef([Syntax.Decl(Id "x", Type.Int); Syntax.Decl(Id "y", Type.Int)], Body(Var(Id "y")), Type.Var None)), [ Int 13; Int 4 ])
+        let ast = App((FunDef([Syntax.Decl(Id "x", Type.Int); Syntax.Decl(Id "y", Type.Int)], Body(Var(Id "y")), Type.genType)), [ Int 13; Int 4 ])
         testEvalRes Env.newSymbolEnv ast (Int 4)
         
     [<Test>]

@@ -11,7 +11,7 @@ module Typing =
         | UnknownSymbol of Identifier.t
         | TypeMismatch of TypeMismatch
     type TypingError = Syntax.Pos * TypingErrorType
-        
+
     let typeMismatchAt (exp:Type.t) (act:Type.t) (p:Syntax.Pos) =
             p, TypingErrorType.TypeMismatch {expected = exp; actual = act}
     let typeMismatch (exp:Type.t) (act:Type.t) =
@@ -28,21 +28,21 @@ module Typing =
         | Syntax.Int(_) -> ok (x, Type.Int)
         | Syntax.Float(_) -> ok (x, Type.Float)
         | Syntax.BinOp(op, a, b) -> typedBinOp env op a b
-            
+
         | Syntax.LetIn(Syntax.Decl(vid, vty), va, insOpt) ->
             trial {
                 let! va, tyVa = typed env va
-                match vty with
-                | Type.Var (Some x) -> ()
-                | Type.Var None -> ()
-                | _ -> ()
+//                match vty with
+//                | Type.Var (Some x) -> ()
+//                | Type.Var None -> ()
+//                | _ -> ()
                 let newEnv = Env.add vid tyVa !env |> ref
                 match insOpt with
                 | None -> return Syntax.LetIn(Syntax.Decl(vid, tyVa), va, None), Type.Unit
                 | Some ins ->
                     let! ins, tyIns = typed newEnv ins
                     match vty with
-                    | Type.Var None -> return Syntax.LetIn(Syntax.Decl(vid, tyVa), va, Some ins), tyIns
+                    | Type.Var(vt) when !vt = None -> return Syntax.LetIn(Syntax.Decl(vid, tyVa), va, Some ins), tyIns
                     | t when t = tyVa -> return Syntax.LetIn(Syntax.Decl(vid, tyVa), va, Some ins), tyIns
                     | _ -> return! fail <| typeMismatch tyVa vty
             }
@@ -60,7 +60,7 @@ module Typing =
             | None -> fail (Syntax.Pos.zero, UnknownSymbol v)
             | Some(tyv) ->
                 match tyv with
-                | Type.Var None ->
+                | Type.Var V when !V = None ->
                     let nextTypeVar = Env.nextPolyType env
                     env := !env |> Env.add v nextTypeVar; ok (x, nextTypeVar)// typed env vd
                 | _ -> ok (x, tyv)// typed env vd
@@ -113,12 +113,12 @@ module Typing =
                 | Type.Fun(atya, Type.Fun(atyb, tret)) when atya <> tya || atyb <> tyb ->
                     if atya <> tya then
                         match tya with
-                        | Type.Var None ->
+                        | Type.Var x when !x = None ->
 //                            env := Env.add
                             return Syntax.BinOp(op, (ap, a), (bp, b)), tret
                         | _ -> return! fail (typeMismatch atya tya)
                     else
                         return! fail (typeMismatch atyb tyb)
-                | Type.Fun(_args,_ret) -> return! fail (typeMismatchAt (Type.Var None) (tyop) ap)
-                | _ -> return! fail (typeMismatch (Type.arrow [tya; tyb; Type.Var None]) tyop)
+                | Type.Fun(_args,_ret) -> return! fail (typeMismatchAt (Type.arrow []) (tyop) ap)
+                | _ -> return! fail (typeMismatch (Type.arrow [tya; tyb; tya]) tyop)
         }
