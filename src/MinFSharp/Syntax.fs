@@ -26,13 +26,14 @@ module Syntax =
 //    and Op = Lt | Gt | Eq | Ne
     and Op = string
     and post = Pos * t
+    and VarDecl = Decl of id:Identifier.t * ty:Type.t
     and t =
     | Unit
     | Bool of bool
     | Int of int
     | Float of float
     | BinOp of Op * post * post
-    | LetIn of id:(Identifier.t * Type.t) * value:t * scope:(t option)
+    | LetIn of id:VarDecl * value:t * scope:(t option)
     | If of post * post * post
     | Var of Identifier.t
     | FunDef of args:(Identifier.t * Type.t) list * body:FBody * ty:Type.t

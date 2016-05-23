@@ -10,7 +10,7 @@ module Interpreter =
         match a with
         | Unit -> ok Unit
         | Bool(_) | Int(_) | Float(_) -> ok a
-        | LetIn((id,_ty), value, Some body) -> eval (e |> Map.add id value) body
+        | LetIn(Decl(id,_ty), value, Some body) -> eval (e |> Map.add id value) body
         | Var(id) ->
             trial {
                 let! def = (Map.tryFind id e) |> failIfNone (AppNotFound id)

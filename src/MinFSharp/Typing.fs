@@ -29,19 +29,19 @@ module Typing =
         | Syntax.Float(_) -> ok (x, Type.Float)
         | Syntax.BinOp(op, a, b) -> typedBinOp env op a b
             
-        | Syntax.LetIn((vid, vty), va, insOpt) ->
+        | Syntax.LetIn(Syntax.Decl(vid, vty), va, insOpt) ->
             trial {
                 let! va, tyVa = typed env va
 //                match vty with
 //                | Type.Var (Some x)
                 let newEnv = env |> Map.add vid va
                 match insOpt with
-                | None -> return Syntax.LetIn((vid, tyVa), va, None), Type.Unit
+                | None -> return Syntax.LetIn(Syntax.Decl(vid, tyVa), va, None), Type.Unit
                 | Some ins ->
                     let! ins, tyIns = typed newEnv ins
                     match vty with
-                    | Type.Var None -> return Syntax.LetIn((vid, tyVa), va, Some ins), tyIns
-                    | t when t = tyVa -> return Syntax.LetIn((vid, tyVa), va, Some ins), tyIns
+                    | Type.Var None -> return Syntax.LetIn(Syntax.Decl(vid, tyVa), va, Some ins), tyIns
+                    | t when t = tyVa -> return Syntax.LetIn(Syntax.Decl(vid, tyVa), va, Some ins), tyIns
                     | _ -> return! fail <| typeMismatch tyVa vty
             }
         | Syntax.If((posCond,cond), (posThen, ethen), (posElse, eelse)) ->
@@ -57,11 +57,15 @@ module Typing =
             match Map.tryFind v env with
             | None -> fail (Syntax.Pos.zero, UnknownSymbol v)
             | Some vd -> typed env vd
-        | Syntax.FunDef(args, body, ret) ->
+        | Syntax.FunDef(args, Syntax.FBody.Ext body, ret) ->
             ok (x, Type.arrow((args |> List.map snd) @ [ret]))
-//            trial {
-//                let! tr, tyr = typed env body
-//            }
+        | Syntax.FunDef(args, Syntax.FBody.Body body, ret) ->
+            trial {
+//                let newEnv = args |> List.fold(fun e (argId,argTy) -> e |> Map.add argId (Syntax.Var())) env
+                
+                let! tr, tyr = typed env body
+                return (x, Type.arrow((args |> List.map snd) @ [ret]))
+            }
         | Syntax.App(func, args) ->
             let rec typeArrow f tf args =
                 trial {

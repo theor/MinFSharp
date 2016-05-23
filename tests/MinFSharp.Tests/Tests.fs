@@ -30,7 +30,7 @@ module EvalTests =
 
     [<Test>]
     let ``let var then return``() =
-        let ast = LetIn((Id "x", Type.Int), Int 13, Var(Id "x") |> Some)
+        let ast = LetIn(Syntax.Decl(Id "x", Type.Int), Int 13, Var(Id "x") |> Some)
         testEvalRes Env.newEnv ast (Int 13)
 
     [<Test>]

@@ -32,38 +32,38 @@ module ParserTests =
                 d "f 42 13" (appId "f" [Int 42; Int 13])
                 d "(f 42 13)" (appId "f" [Int 42; Int 13])
                 d "(f (g 42) 13)" (App(Var(Id "f"), [appId "g" [Int 42]; Int 13]))
-                d "let x = 7 in\nx" (LetIn(((Id "x"), Type.Var None), Int 7,
+                d "let x = 7 in\nx" (LetIn(Syntax.Decl((Id "x"), Type.Var None), Int 7,
                                            Some <| Var(Id "x")))
-                d "let x = 1 in\nlet y = 2 in\n x+y" (LetIn(((Id "x"), Type.Var None), Int 1,
-                                                            (LetIn(((Id "y"), Type.Var None), Int 2,
+                d "let x = 1 in\nlet y = 2 in\n x+y" (LetIn(Syntax.Decl((Id "x"), Type.Var None), Int 1,
+                                                            (LetIn(Syntax.Decl((Id "y"), Type.Var None), Int 2,
                                                                    BinOp("+", Var(Id "x") @@ (3L,2L), Var(Id "y") @@ (3L,4L))|>Some))|>Some))
                 d "1;2" (Seq [Int 1 @@ (1L,1L); Int 2 @@ (1L,3L)])
                 d "1\n2" (Seq [Int 1 @@ (1L,1L); Int 2 @@ (2L,1L)])
-                d "let x : int = 7 in\nx" (LetIn(((Id "x"), Type.Int), Int 7,
+                d "let x : int = 7 in\nx" (LetIn(Syntax.Decl((Id "x"), Type.Int), Int 7,
                                                  Some <| Var(Id "x")))
-                d "let x : bool = 7 in\nx" (LetIn(((Id "x"), Type.Bool), Int 7,
+                d "let x : bool = 7 in\nx" (LetIn(Syntax.Decl((Id "x"), Type.Bool), Int 7,
                                                  Some <| Var(Id "x")))
-                d "let x : int array = () in ()" (LetIn((Id "x", Type.Array Type.Int), Unit, Some Unit))
-                d "let x : int * bool = () in ()" (LetIn((Id "x", Type.Tuple [Type.Int; Type.Bool]), Unit, Some Unit))
-                d "let x : int -> bool -> float = () in ()" (LetIn((Id "x", Type.arrow [Type.Int; Type.Bool; Type.Float]), Unit, Some Unit))
+                d "let x : int array = () in ()" (LetIn(Syntax.Decl(Id "x", Type.Array Type.Int), Unit, Some Unit))
+                d "let x : int * bool = () in ()" (LetIn(Syntax.Decl(Id "x", Type.Tuple [Type.Int; Type.Bool]), Unit, Some Unit))
+                d "let x : int -> bool -> float = () in ()" (LetIn(Syntax.Decl(Id "x", Type.arrow [Type.Int; Type.Bool; Type.Float]), Unit, Some Unit))
                 d "true" (Bool true)
                 d "false" (Bool false)
                 d "if true then 1 else 2" (If(Bool true @@ (1L, 4L), Int 1 @@ (1L,14L), Int 2 @@ (1L,21L)))
                 d "if true then\n  1\nelse\n  2" (If(Bool true @@ (1L,4L), Int 1 @@ (2L,3L), Int 2 @@ (4L,3L)))
                 d "if (f 42) then 1 else 2" (If((appId "f" [Int 42]) @@ (1L,4L), Int 1 @@ (1L,16L), Int 2 @@ (1L,23L)))
-                d "let min x y = if x < y then x else y" (LetIn((Id "min", Type.Var None),
+                d "let min x y = if x < y then x else y" (LetIn(Syntax.Decl(Id "min", Type.Var None),
                                                                 (FunDef([(Id "x", Type.Var None);(Id "y", Type.Var None)],
                                                                         FBody.Body ((If (BinOp ("<",Var (Id "x") @@ (1L,18L), Var (Id "y")@@ (1L,22L)) @@ (1L,18L),
                                                                                          Var (Id "x") @@ (1L,29L),
                                                                                          Var (Id "y") @@ (1L,36L)))), Type.Var None)),
                                                                 None))
-                d "let f x y = y" (LetIn((Id "f", Type.Var None), (FunDef([(Id "x", Type.Var None);(Id "y", Type.Var None)],
-                                                                          FBody.Body << Var <| Id "y", Type.Var None)),
+                d "let f x y = y" (LetIn(Syntax.Decl(Id "f", Type.Var None), (FunDef([(Id "x", Type.Var None);(Id "y", Type.Var None)],
+                                                                                     FBody.Body << Var <| Id "y", Type.Var None)),
                                          None))
                 d "let fact n =\
                      if n <= 1 then 1
                      else n * (fact (n - 1))"
-                   (LetIn((Id "fact", Type.Var None),
+                   (LetIn(Syntax.Decl(Id "fact", Type.Var None),
                           FunDef([(Id "n", Type.Var None)],
                                  Body(If(BinOp ("<=",Var (Id "n") @@ (1L,16L),Int 1 @@ (1L,21L)) @@ (1L,16L),
                                          Int 1 @@ (1L,28L),
@@ -74,7 +74,7 @@ module ParserTests =
                 d "let fact n =\
                      if n <= 1 then 1
                      else n * (fact (n-1))"
-                   (LetIn((Id "fact", Type.Var None),
+                   (LetIn(Syntax.Decl(Id "fact", Type.Var None),
                           FunDef([(Id "n", Type.Var None)],
                                  Body(If(BinOp ("<=",Var (Id "n") @@ (1L,16L),Int 1 @@ (1L,21L)) @@ (1L,16L),
                                          Int 1 @@ (1L,28L),
