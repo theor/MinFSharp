@@ -20,7 +20,7 @@ module TypingTests =
     type Tcs() =
         static member Data() =
             [| d Type.Int (Int 42)
-               d (Type.Fun(Type.var 0u, Type.var 0u)) (Syntax.varId "id")
+               d (Type.Fun(Type.Poly 0u, Type.Poly 0u)) (Syntax.varId "id")
 
                d (Type.arrow[Type.Int; Type.Int; Type.Int]) (Var (Identifier.Id "(+)"))
                d (Type.arrow[Type.Int; Type.Int; Type.Int]) (Var (Identifier.Id "add"))
@@ -29,11 +29,11 @@ module TypingTests =
                f (Type.Int) (App(Var (Identifier.Id "add"), [Int 1; Int 2; Int 3]))
                d (Type.arrow[Type.Int; Type.Int]) (App (Var (Identifier.Id "add"), [Int 1]))
 
-               d (Type.Fun(Type.var 0u, Type.var 0u))
+               d (Type.Fun(Type.Poly 0u, Type.Poly 0u))
                  (Syntax.FunDef([Syntax.Decl(Identifier.Id "x", Type.Var None)],
                                 Syntax.FBody.Body(Syntax.varId "x"),
                                 Type.Var None))
-               d (Type.Fun(Type.var 0u, Type.var 0u))
+               d (Type.Fun(Type.Poly 0u, Type.Poly 0u))
                  (Syntax.FunDef([Syntax.Decl(Identifier.Id "x", Type.Var None)],
                                 Syntax.FBody.Body(Syntax.BinOp("+", pz <| Syntax.varId "x", pz <| Syntax.varId "x")),
                                 Type.Var None))

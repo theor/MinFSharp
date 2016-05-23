@@ -5,10 +5,12 @@ module Env =
     open Syntax
     type Symbol = Map<Identifier.t,Syntax.t>
     type Type = private { types:Map<Identifier.t,Type.t>
-                          mutable typevarCount:uint32 }
+                          mutable polytypeCount:uint32 }
     with
         member x.tryFind = x.types.TryFind
-    let nextTypevar e = e := { !e with typevarCount = (!e).typevarCount  + 1u }; Type.var ((!e).typevarCount - 1u)
+    let nextPolyType e =
+        e := { !e with polytypeCount = (!e).polytypeCount  + 1u }
+        Type.Poly ((!e).polytypeCount - 1u)
     let add id t e = { e with types = Map.add id t e.types }
     let find id e = Map.find id e.types
 
@@ -18,13 +20,13 @@ module Env =
             FunDef([Decl(Id "x",Type.Int); Decl(Id "y", Type.Int)],
                    Ext(fun [Int(x); Int(y)] -> Int (x+y)), Type.Int))
          Id "(+)", Type.arrow [Type.Int;Type.Int;Type.Int], Var(Id "add")
-         (Id "id", Type.arrow [Type.var 0u;Type.var 0u],
-             FunDef([Decl(Id "x", Type.Var <| Some 0u)],
+         (Id "id", Type.arrow [Type.Poly 0u; Type.Poly 0u],
+             FunDef([Decl(Id "x", Type.Poly 0u)],
                     Ext(fun [_x] -> Var(Id "x")),
-                    Type.var 0u))
+                    Type.Poly 0u))
         ];
     let newTypeEnv : Type =
         let types = defs |> List.map (fun (id,t,_def) -> (id, t)) |> Map.ofList
-        { types = types; typevarCount = 0u }
+        { types = types; polytypeCount = 0u }
     let newSymbolEnv : Symbol =
         defs |> List.map (fun (id,_t,def) -> (id, def)) |> Map.ofList

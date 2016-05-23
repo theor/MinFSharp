@@ -61,7 +61,7 @@ module Typing =
             | Some(tyv) ->
                 match tyv with
                 | Type.Var None ->
-                    let nextTypeVar = Env.nextTypevar env
+                    let nextTypeVar = Env.nextPolyType env
                     env := !env |> Env.add v nextTypeVar; ok (x, nextTypeVar)// typed env vd
                 | _ -> ok (x, tyv)// typed env vd
         | Syntax.FunDef(args, Syntax.FBody.Ext _ext, ret) ->
