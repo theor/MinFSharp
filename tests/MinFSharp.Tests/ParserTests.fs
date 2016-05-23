@@ -109,8 +109,9 @@ module ParserTests =
             printf "%A" ast
             diff ast a
             ast |> shouldEqual a
+            let env = ref Env.newEnv
             trial {
-                let! typed = Typing.typed Env.newEnv ast
+                let! typed = Typing.typed env ast
                 do printfn "\n\nTYPED:\n%A" typed
             }
         | Bad(e) ->  failwith (e.ToString())

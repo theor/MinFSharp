@@ -21,7 +21,7 @@ module Typing =
 
     type TypedAstResult = Result<Syntax.t * Type.t, TypingError>
 
-    let rec typed (env:Env.t) x : TypedAstResult =
+    let rec typed (env:Env.t ref) x : TypedAstResult =
         match x with
         | Syntax.Unit -> ok (x, Type.Unit)
         | Syntax.Bool(_) -> ok (x, Type.Bool)
@@ -34,7 +34,7 @@ module Typing =
                 let! va, tyVa = typed env va
 //                match vty with
 //                | Type.Var (Some x)
-                let newEnv = env |> Map.add vid (tyVa,va)
+                let newEnv = !env |> Map.add vid (tyVa,va) |> ref
                 match insOpt with
                 | None -> return Syntax.LetIn(Syntax.Decl(vid, tyVa), va, None), Type.Unit
                 | Some ins ->
@@ -54,7 +54,7 @@ module Typing =
                 return Syntax.If((posCond, cond), (posThen, ethen), (posElse, eelse)), tthen
             }
         | Syntax.Var(v) ->
-            match Map.tryFind v env with
+            match Map.tryFind v !env with
             | None -> fail (Syntax.Pos.zero, UnknownSymbol v)
             | Some(tyv, vd) -> typed env vd
         | Syntax.FunDef(args, Syntax.FBody.Ext body, ret) ->
@@ -95,7 +95,7 @@ module Typing =
             let! a, tya = typed env a
             let! b, tyb = typed env b
             let opId = Syntax.opName op |> Identifier.Id
-            match Map.tryFind opId env with
+            match Map.tryFind opId !env with
             | None -> return! fail (Syntax.Pos.zero, UnknownSymbol opId)
             | Some(t,o) ->
                 let! _top, tyop = typed env o
