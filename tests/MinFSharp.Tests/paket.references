@@ -3,4 +3,5 @@ FParsec
 group Test
 NUnit
 NUnit.Runners
+FSharp.Object.Diff
 File:FsUnitTyped.fs

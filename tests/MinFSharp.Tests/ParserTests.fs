@@ -10,6 +10,7 @@ module ParserTests =
     open NUnit.Framework
     open FsUnitTyped
     open Chessie.ErrorHandling
+    open FSharp.Object.Diff
 
     let dn name str ast  =
         TestCaseData(str, ast).SetName(name)
@@ -49,7 +50,7 @@ module ParserTests =
                 d "false" (Bool false)
                 d "if true then 1 else 2" (If(Bool true @@ (1L, 4L), Int 1 @@ (1L,14L), Int 2 @@ (1L,21L)))
                 d "if true then\n  1\nelse\n  2" (If(Bool true @@ (1L,4L), Int 1 @@ (2L,3L), Int 2 @@ (4L,3L)))
-                d "if (f 42) then 1 else 2" (If((appId "f" [Int 42]) @@ (1L,4L), Int 1 @@ (1L,1L), Int 2 @@ (1L,1L)))
+                d "if (f 42) then 1 else 2" (If((appId "f" [Int 42]) @@ (1L,4L), Int 1 @@ (1L,16L), Int 2 @@ (1L,23L)))
                 d "let min x y = if x < y then x else y" (LetIn((Id "min", Type.Var None),
                                                                 (FunDef([(Id "x", Type.Var None);(Id "y", Type.Var None)],
                                                                         FBody.Body ((If (BinOp ("<",Var (Id "x") @@ (1L,18L), Var (Id "y")@@ (1L,22L)) @@ (1L,18L),
@@ -64,29 +65,49 @@ module ParserTests =
                      else n * (fact (n - 1))"
                    (LetIn((Id "fact", Type.Var None),
                           FunDef([(Id "n", Type.Var None)],
-                                 Body(If(BinOp ("<=",Var (Id "n") @@ (1L,16L),Int 1 @@ (1L,21L)) @@ (1L,1L),
-                                         Int 1 @@ (1L,1L),
+                                 Body(If(BinOp ("<=",Var (Id "n") @@ (1L,16L),Int 1 @@ (1L,21L)) @@ (1L,16L),
+                                         Int 1 @@ (1L,28L),
                                          BinOp("*",Var (Id "n") @@ (2L,27L),
                                                    App (Var (Id "fact"),
-                                                        [BinOp ("-", Var (Id "n") @@ (2L,38L), Int 1 @@ (2L,42L))]) @@ (2L,31L)) @@ (1L,1L))),
+                                                        [BinOp ("-", Var (Id "n") @@ (2L,38L), Int 1 @@ (2L,42L))]) @@ (2L,31L)) @@ (2L,27L))),
                                  Type.Var None),None))
                 d "let fact n =\
                      if n <= 1 then 1
                      else n * (fact (n-1))"
                    (LetIn((Id "fact", Type.Var None),
                           FunDef([(Id "n", Type.Var None)],
-                                 Body(If(BinOp ("<=",Var (Id "n") @@ (1L,16L),Int 1 @@ (1L,21L)) @@ (1L,1L),
-                                         Int 1 @@ (1L,1L),
+                                 Body(If(BinOp ("<=",Var (Id "n") @@ (1L,16L),Int 1 @@ (1L,21L)) @@ (1L,16L),
+                                         Int 1 @@ (1L,28L),
                                          BinOp("*",Var (Id "n") @@ (2L,27L),
                                                    App (Var (Id "fact"),
-                                                        [BinOp ("-", Var (Id "n") @@ (2L,38L), Int 1 @@ (2L,40L))]) @@ (2L,31L)) @@ (1L,1L))),
+                                                        [BinOp ("-", Var (Id "n") @@ (2L,38L), Int 1 @@ (2L,40L))]) @@ (2L,31L)) @@ (2L,27L))),
                                  Type.Var None),None))
             |]
+
+    type DiffVisitor() =
+        interface NodeVisitor with
+            member x.Node(arg1: DiffNode, arg2: NodeVisit): unit =
+                if arg1.State = DiffNodeState.Changed then
+                    printfn "%A-%A\n" arg1.Type.Name arg1.Path
+
+
+    let diff a b =
+//        let d = DiffMatchPatch.diff_match_patch()
+//        let ta = sprintf "%A" a
+//        let tb = sprintf "%A" b
+//        let diffs = d.patch_make(ta, tb)
+//        let txt = d.patch_toText diffs
+//        printfn "\n\ndiff:\n%s" txt
+
+        let delta = ObjectDifferBuilder.BuildDefault().Compare(a, b)
+        delta.Visit(PrintingVisitor(a,b))
+        delta.Visit(DiffVisitor())
 
     let testParseOk (s:string) (a:Syntax.t) =
         match MinFSharp.Parser.parseU (ignore (*printf "%A"*)) s with
         | Ok(ast,_) ->
             printf "%A" ast
+            diff ast a
             ast |> shouldEqual a
             trial {
                 let! typed = Typing.typed Env.newEnv ast

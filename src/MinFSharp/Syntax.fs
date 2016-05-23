@@ -12,7 +12,7 @@ module Syntax =
         static member zero = Pos.from(0L, 0L)
     let zeroPos = FParsec.Position(null, 0L, 0L, 0L)
     [<CustomEquality;NoComparison>]
-    type FBody = | Body of t | Ext of (t list -> t)
+    type FBody = | Body of body:t | Ext of ext:(t list -> t)
     with
         override x.Equals(yobj) =
             match yobj with
@@ -32,10 +32,10 @@ module Syntax =
     | Int of int
     | Float of float
     | BinOp of Op * post * post
-    | LetIn of (Identifier.t * Type.t) * t * (t option)
+    | LetIn of id:(Identifier.t * Type.t) * value:t * scope:(t option)
     | If of post * post * post
     | Var of Identifier.t
-    | FunDef of (Identifier.t * Type.t) list * FBody * Type.t
+    | FunDef of args:(Identifier.t * Type.t) list * body:FBody * ty:Type.t
     | App of t * t list
     | Seq of post list
     with

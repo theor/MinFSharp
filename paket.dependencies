@@ -22,3 +22,4 @@ group Test
   github fsprojects/FsUnit src/FsUnit.NUnit/FsUnitTyped.fs
   nuget NUnit ~> 2
   nuget NUnit.Runners ~> 2
+  nuget FSharp.Object.Diff
