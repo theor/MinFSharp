@@ -20,7 +20,7 @@ module TypingTests =
     type Tcs() =
         static member Data() =
             [| d Type.Int (Int 42)
-               d (Type.Fun(Type.var "a", Type.var "a")) (Syntax.varId "id")
+               d (Type.Fun(Type.var 0u, Type.var 0u)) (Syntax.varId "id")
 
                d (Type.arrow[Type.Int; Type.Int; Type.Int]) (Var (Identifier.Id "(+)"))
                d (Type.arrow[Type.Int; Type.Int; Type.Int]) (Var (Identifier.Id "add"))
@@ -29,9 +29,13 @@ module TypingTests =
                f (Type.Int) (App(Var (Identifier.Id "add"), [Int 1; Int 2; Int 3]))
                d (Type.arrow[Type.Int; Type.Int]) (App (Var (Identifier.Id "add"), [Int 1]))
 
-               d (Type.Fun(Type.var "a", Type.var "a"))
+               d (Type.Fun(Type.var 0u, Type.var 0u))
                  (Syntax.FunDef([Syntax.Decl(Identifier.Id "x", Type.Var None)],
                                 Syntax.FBody.Body(Syntax.varId "x"),
+                                Type.Var None))
+               d (Type.Fun(Type.var 0u, Type.var 0u))
+                 (Syntax.FunDef([Syntax.Decl(Identifier.Id "x", Type.Var None)],
+                                Syntax.FBody.Body(Syntax.BinOp("+", pz <| Syntax.varId "x", pz <| Syntax.varId "x")),
                                 Type.Var None))
 
                d Type.Int (BinOp("+", pz <| Int 42, pz <| Int 42))
@@ -56,8 +60,8 @@ module TypingTests =
         | false, Fail(e) -> printfn "%A" e
         | false, Pass(ast, ty) -> printfn "res:%A\n" ast; failwith "should fail"
         | true, Pass(ast, ty) ->
-            printf "%O\n" ty
-            printf "%O\n" ast
+            printf "Type:\n%O\n" ty
+            printf "Ast:\n%O\n" ast
             ty |> shouldEqual t
         | _, _ -> failwith "WEIRD"
 

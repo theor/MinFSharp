@@ -9,7 +9,7 @@ module Type =
     | Fun of t * t
     | Tuple of t list
     | Array of t
-    | Var of string option
+    | Var of uint32 option
     with
         override x.ToString() =
             let tstr x = x.ToString()

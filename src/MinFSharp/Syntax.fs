@@ -2,6 +2,10 @@
 
 module Identifier =
     type t = Id of string
+    with
+        override x.ToString() =
+            match x with
+            | Id s -> sprintf "Id:%s" s
 
 module Syntax =
 //    [<CustomEquality;NoComparison>]

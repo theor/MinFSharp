@@ -36,7 +36,7 @@ module Typing =
                 | Type.Var (Some x) -> ()
                 | Type.Var None -> ()
                 | _ -> ()
-                let newEnv = !env |> Map.add vid (tyVa) |> ref
+                let newEnv = Env.add vid tyVa !env |> ref
                 match insOpt with
                 | None -> return Syntax.LetIn(Syntax.Decl(vid, tyVa), va, None), Type.Unit
                 | Some ins ->
@@ -56,16 +56,23 @@ module Typing =
                 return Syntax.If((posCond, cond), (posThen, ethen), (posElse, eelse)), tthen
             }
         | Syntax.Var(v) ->
-            match Map.tryFind v !env with
+            match (!env).tryFind v with
             | None -> fail (Syntax.Pos.zero, UnknownSymbol v)
-            | Some(tyv) -> ok (x, tyv)// typed env vd
+            | Some(tyv) ->
+                match tyv with
+                | Type.Var None ->
+                    let nextTypeVar = Env.nextTypevar env
+                    env := !env |> Env.add v nextTypeVar; ok (x, nextTypeVar)// typed env vd
+                | _ -> ok (x, tyv)// typed env vd
         | Syntax.FunDef(args, Syntax.FBody.Ext _ext, ret) ->
             ok (x, Type.arrow((args |> List.map Syntax.declType) @ [ret]))
         | Syntax.FunDef(args, Syntax.FBody.Body body, ret) ->
             trial {
-                let newEnv = args |> List.fold(fun e (Syntax.Decl(argId,argTy)) -> e |> Map.add argId argTy) !env |> ref
-                let! _tr, _tyr = typed newEnv body
-                return (x, Type.arrow((args |> List.map Syntax.declType) @ [ret]))
+                let newEnv = args |> List.fold(fun e (Syntax.Decl(argId,argTy)) -> Env.add argId argTy e) !env |> ref
+                let! tbody, tret = typed newEnv body
+                let args = args |> List.map (fun (Syntax.Decl(argId,_argTy)) -> Syntax.Decl(argId, Env.find argId !newEnv))
+                return (Syntax.FunDef(args, Syntax.FBody.Body tbody, tret),
+                        Type.arrow((args |> List.map Syntax.declType) @ [tret]))
             }
         | Syntax.App(func, args) ->
             let rec typeArrow f tf args =
@@ -96,16 +103,20 @@ module Typing =
             let! a, tya = typed env a
             let! b, tyb = typed env b
             let opId = Syntax.opName op |> Identifier.Id
-            match Map.tryFind opId !env with
+            match (!env).tryFind opId with
             | None -> return! fail (Syntax.Pos.zero, UnknownSymbol opId)
             | Some tyop ->
 //                let! _top, tyop = typed env o
                 match tyop with
                 | Type.Fun(atya, Type.Fun(atyb, tret)) when atya = tya && atyb = tyb ->
                     return Syntax.BinOp(op, (ap, a), (bp, b)), tret
-                | Type.Fun(atya, Type.Fun(atyb, _tret)) when atya <> tya || atyb <> tyb ->
+                | Type.Fun(atya, Type.Fun(atyb, tret)) when atya <> tya || atyb <> tyb ->
                     if atya <> tya then
-                        return! fail (typeMismatch atya tya)
+                        match tya with
+                        | Type.Var None ->
+//                            env := Env.add
+                            return Syntax.BinOp(op, (ap, a), (bp, b)), tret
+                        | _ -> return! fail (typeMismatch atya tya)
                     else
                         return! fail (typeMismatch atyb tyb)
                 | Type.Fun(_args,_ret) -> return! fail (typeMismatchAt (Type.Var None) (tyop) ap)
