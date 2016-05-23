@@ -15,6 +15,8 @@ module TypingTests =
         TestCaseData(ast, ty, true).SetName(sprintf "%A" ast)
     let f ty (ast:Syntax.t) =
         TestCaseData(ast, ty, false).SetName(sprintf "%A" ast)
+
+    let pz p = p @= Pos.zero
     type Tcs() =
         static member Data() =
             [| d Type.Int (Int 42)
@@ -32,13 +34,13 @@ module TypingTests =
                                 Syntax.FBody.Body(Syntax.varId "x"),
                                 Type.Var None))
 
-               d Type.Int (BinOp("+", Int 42 @= Pos.zero, Int 42 @= Pos.zero))
-               f Type.Int (BinOp("+", Int 42 @= Pos.zero, Float 42.0 @= Pos.zero))
+               d Type.Int (BinOp("+", pz <| Int 42, pz <| Int 42))
+               f Type.Int (BinOp("+", pz <| Int 42, pz <| Float 42.0))
 
                d Type.Int (LetIn((Id("x"),Type.Var None), (Int 3), Some <| Int 42))
                d Type.Int (LetIn((Id("x"),Type.Var None), (Int 3), Some <| varId "x"))
-               d Type.Int (LetIn((Id("x"),Type.Var None), (Int 3), 
-               Some <| varId "x"))
+               d Type.Int (LetIn((Id("x"),Type.Var None), (Int 3),
+                                 Some <| varId "x"))
                f Type.Int (LetIn((Id("x"),Type.Unit), (Int 3), Some <| varId "x"))
 
                d Type.Int (If(Bool true, Int 3, Int 4))

@@ -36,8 +36,8 @@ module ParserTests =
                 d "let x = 1 in\nlet y = 2 in\n x+y" (LetIn(((Id "x"), Type.Var None), Int 1,
                                                             (LetIn(((Id "y"), Type.Var None), Int 2,
                                                                    BinOp("+", Var(Id "x") @@ (3L,2L), Var(Id "y") @@ (3L,4L))|>Some))|>Some))
-                d "1;2" (Seq [Int 1; Int 2])
-                d "1\n2" (Seq [Int 1; Int 2])
+                d "1;2" (Seq [Int 1 @@ (1L,1L); Int 2 @@ (1L,3L)])
+                d "1\n2" (Seq [Int 1 @@ (1L,1L); Int 2 @@ (2L,1L)])
                 d "let x : int = 7 in\nx" (LetIn(((Id "x"), Type.Int), Int 7,
                                                  Some <| Var(Id "x")))
                 d "let x : bool = 7 in\nx" (LetIn(((Id "x"), Type.Bool), Int 7,

@@ -81,8 +81,9 @@ module Typing =
             }
         | Syntax.Seq(s) ->
             trial {
-                let! ts = s |> List.map (typed env) |> Trial.collect
-                return Syntax.Seq(ts |> List.map fst), (if ts.Length = 0 then Type.Unit else List.last ts |> snd)
+                let! ts = s |> List.map (snd >> (typed env)) |> Trial.collect
+                let tss = List.zip (s |> List.map fst) (ts |> List.map fst)
+                return Syntax.Seq tss, (if tss.Length = 0 then Type.Unit else List.last ts |> snd)
             }
 
     and typedBinOp (env) op (ap, a) (bp, b) =
@@ -130,4 +131,4 @@ module Typing =
                 return Type.arrowr targs tvody
             }
         | Syntax.App(_, _) -> failwith "Not implemented yet"
-        | Syntax.Seq l -> l |> List.map (typing env) |> Trial.collect |> Trial.bind (Seq.last >> ok)
+//        | Syntax.Seq l -> l |> List.map (typing env) |> Trial.collect |> Trial.bind (Seq.last >> ok)

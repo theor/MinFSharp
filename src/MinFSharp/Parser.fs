@@ -34,7 +34,6 @@ module Parser =
             <!> "pId"
 
         let pExp, pExpImpl = createParserForwardedToRef()
-        let pBlockExp, pBlockExpImpl = createParserForwardedToRef()
 
         let pParenExp = between (skipChar '(') (skipChar ')') pExp
 
@@ -95,9 +94,11 @@ module Parser =
             str "if" >>. pOpExp .>> strn "then" .>>. pOpExp .>> nws .>> strn "else" .>> nws .>>. pOpExp
             |>> (fun ((eIf, eThen), eElse) -> Syntax.If(eIf, eThen, eElse))
             <!> "pIf"
-
-        pBlockExpImpl := pIf <|> pOpExp <!> "pBlockExp"
-        pExpImpl := sepBy1 pBlockExp (strn ";" |>> ignore <|> (anyOf "\n" .>> ws |>> ignore <!> "p \\n")) |>> (fun l -> if List.length l = 1 then l.Head else Syntax.Seq l) <!> "pExp"
+        let pBlockExp = pIf <|> pOpExp <!> "pBlockExp"
+        pExpImpl := sepBy1 (withPos pBlockExp) (strn ";" |>> ignore
+                                      <|> (anyOf "\n" .>> ws |>> ignore <!> "p \\n"))
+                    |>> (fun l -> if List.length l = 1 then snd l.Head else Syntax.Seq l)
+                    <!> "pExp"
         let p = pExp
         let r =
             FParsec.CharParsers.runParserOnString p ({ Debug =

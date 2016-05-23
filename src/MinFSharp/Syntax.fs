@@ -32,13 +32,12 @@ module Syntax =
     | Int of int
     | Float of float
     | BinOp of Op * post * post
-//    | Let of (Identifier.t * Type.t) * t
     | LetIn of (Identifier.t * Type.t) * t * (t option)
     | If of t * t * t
     | Var of Identifier.t
     | FunDef of (Identifier.t * Type.t) list * FBody * Type.t
     | App of t * t list
-    | Seq of t list
+    | Seq of post list
     with
         override x.ToString() = sprintf "%A" x
 
