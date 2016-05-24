@@ -56,10 +56,10 @@ module TypingTests =
     let ``test typing`` (ast:Syntax.t) t passes =
         let env = ref Env.newTypeEnv
         match passes, Typing.typed env ast with
-        | true, Fail(e) -> printfn "%A" e; failwith "should pass"
+        | true, Fail(e) -> printfn "%A" e; printfn "%A" ast; failwith "should pass"
         | false, Fail(e) -> printfn "%A" e
-        | false, Pass(ast, ty) -> printfn "res:%A\n" ast; failwith "should fail"
-        | true, Pass(ast, ty) ->
+        | false, Pass(ty) -> printfn "res:%A\n" ast; failwith "should fail"
+        | true, Pass( ty) ->
             printf "Type:\n%O\n" ty
             printf "Ast:\n%O\n" ast
             ty |> shouldEqual t
