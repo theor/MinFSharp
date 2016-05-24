@@ -32,20 +32,20 @@ module TypingTests =
                d (Type.Int) (App(Syntax.varId "id", [Int 1]))
 
                d (Type.Fun(Type.Poly 0u, Type.Poly 0u))
-                 (Syntax.FunDef([Syntax.Decl(Identifier.Id "x", Type.genType)],
+                 (Syntax.FunDef([Syntax.Decl(Identifier.Id "x", Type.genType())],
                                 Syntax.FBody.Body(Syntax.varId "x"),
-                                Type.genType))
+                                Type.genType()))
                d (Type.Fun(Type.Poly 0u, Type.Poly 0u))
-                 (Syntax.FunDef([Syntax.Decl(Identifier.Id "x", Type.genType)],
+                 (Syntax.FunDef([Syntax.Decl(Identifier.Id "x", Type.genType())],
                                 Syntax.FBody.Body(Syntax.BinOp("+", pz <| Syntax.varId "x", pz <| Syntax.varId "x")),
-                                Type.genType))
+                                Type.genType()))
 
                d Type.Int (BinOp("+", pz <| Int 42, pz <| Int 42))
                f Type.Int (BinOp("+", pz <| Int 42, pz <| Float 42.0))
 
-               d Type.Int (LetIn(Syntax.Decl(Id("x"),Type.genType), (Int 3), Some <| Int 42))
-               d Type.Int (LetIn(Syntax.Decl(Id("x"),Type.genType), (Int 3), Some <| varId "x"))
-               d Type.Int (LetIn(Syntax.Decl(Id("x"),Type.genType), (Int 3),
+               d Type.Int (LetIn(Syntax.Decl(Id("x"),Type.genType()), (Int 3), Some <| Int 42))
+               d Type.Int (LetIn(Syntax.Decl(Id("x"),Type.genType()), (Int 3), Some <| varId "x"))
+               d Type.Int (LetIn(Syntax.Decl(Id("x"),Type.genType()), (Int 3),
                                  Some <| varId "x"))
                f Type.Int (LetIn(Syntax.Decl(Id("x"),Type.Unit), (Int 3), Some <| varId "x"))
 
@@ -56,8 +56,10 @@ module TypingTests =
     [<Test>]
     [<TestCaseSource(typeof<Tcs>, "Data")>]
     let ``test typing`` (ast:Syntax.t) t passes =
-        let env = ref Env.newTypeEnv
-        match passes, Typing.typed env ast with
+        let env = ref (Env.newTypeEnv())
+        let typing = Typing.typed env ast
+        let ast =  Typing.typed_deref ast
+        match passes, typing with
         | true, Fail(e) -> printfn "%A" e; printfn "%A" ast; failwith "should pass"
         | false, Fail(e) -> printfn "%A" e
         | false, Pass(ty) -> printfn "res:%A\n" ast; failwith "should fail"

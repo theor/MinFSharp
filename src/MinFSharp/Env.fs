@@ -14,7 +14,7 @@ module Env =
     let add id t e = { e with types = Map.add id t e.types }
     let find id e = Map.find id e.types
 
-    let defs =
+    let defs() =
         [
          (Id "add", (Type.arrow [Type.Int;Type.Int;Type.Int]),
             FunDef([Decl(Id "x",Type.Int); Decl(Id "y", Type.Int)],
@@ -25,8 +25,8 @@ module Env =
                     Ext(fun [_x] -> Var(Id "x")),
                     Type.Poly 0u))
         ];
-    let newTypeEnv : Type =
-        let types = defs |> List.map (fun (id,t,_def) -> (id, t)) |> Map.ofList
+    let newTypeEnv() : Type =
+        let types = defs() |> List.map (fun (id,t,_def) -> (id, t)) |> Map.ofList
         { types = types; polytypeCount = 0u }
     let newSymbolEnv : Symbol =
-        defs |> List.map (fun (id,_t,def) -> (id, def)) |> Map.ofList
+        defs() |> List.map (fun (id,_t,def) -> (id, def)) |> Map.ofList

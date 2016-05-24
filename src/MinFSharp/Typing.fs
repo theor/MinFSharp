@@ -47,13 +47,13 @@ module Typing =
                     | t when t = tyVa -> return tyIns
                     | _ -> return! fail <| typeMismatch tyVa vty
             }
-        | Syntax.If((posCond,cond), (posThen, ethen), (posElse, eelse)) ->
+        | Syntax.If((posCond,cond), (_posThen, ethen), (posElse, eelse)) ->
             trial {
                 let! tcond = typed env cond
-                if tcond <> Type.Bool then return! fail <| typeMismatch Type.Bool tcond
+                if tcond <> Type.Bool then return! fail <| typeMismatchAt Type.Bool tcond posCond
                 let! tthen = typed env ethen
                 let! telse = typed env eelse
-                if tthen <> telse then return! fail <| typeMismatch tthen telse
+                if tthen <> telse then return! fail <| typeMismatchAt tthen telse posElse
                 return tthen
             }
         | Syntax.Var(v) ->
@@ -121,14 +121,14 @@ module Typing =
                 | Type.Fun(_args,_ret) -> return! fail (typeMismatchAt (Type.arrow []) (tyop) ap)
                 | _ -> return! fail (typeMismatch (Type.arrow [tya; tyb; tya]) tyop)
         }
-    let rec typed_deref (env:Env.Type ref) x =
+    let rec typed_deref x =
         let rec do_deref_type t =
             match t with
             | Type.Var v -> match !v with
                             | Some vv -> do_deref_type vv
                             | None -> t
             | _ -> t
-        let f = typed_deref env
+        let f = typed_deref
         let fp (pos,x) = (pos, f x)
         match x with
         | Syntax.Unit | Syntax.Bool(_) | Syntax.Int(_) | Syntax.Float(_) | Syntax.Var(_) -> x
@@ -142,4 +142,4 @@ module Typing =
                        | Syntax.Body b -> Syntax.Body (f b)
             Syntax.FunDef(args, body, do_deref_type ty)
         | Syntax.App(fu, args) -> Syntax.App(f fu, args |> List.map f)
-        | Syntax.Seq(s) -> Syntax.Seq(s |> List.map fp)        
+        | Syntax.Seq(s) -> Syntax.Seq(s |> List.map fp)
