@@ -121,3 +121,25 @@ module Typing =
                 | Type.Fun(_args,_ret) -> return! fail (typeMismatchAt (Type.arrow []) (tyop) ap)
                 | _ -> return! fail (typeMismatch (Type.arrow [tya; tyb; tya]) tyop)
         }
+    let rec typed_deref (env:Env.Type ref) x =
+        let rec do_deref_type t =
+            match t with
+            | Type.Var v -> match !v with
+                            | Some vv -> do_deref_type vv
+                            | None -> t
+            | _ -> t
+        let f = typed_deref env
+        let fp (pos,x) = (pos, f x)
+        match x with
+        | Syntax.Unit | Syntax.Bool(_) | Syntax.Int(_) | Syntax.Float(_) | Syntax.Var(_) -> x
+        | Syntax.BinOp(op, (posa, a), (posb, b)) -> Syntax.BinOp(op, (posa, f a), (posb, f b))
+        | Syntax.LetIn(Syntax.Decl(id,ty), value, scope) ->Syntax.LetIn(Syntax.Decl(id, do_deref_type ty), value, scope)
+        | Syntax.If(ei, et, ee) -> Syntax.If(fp ei, fp et, fp ee)
+        | Syntax.FunDef(args, body, ty) ->
+            let args = args |> List.map (fun (Syntax.Decl(id,ty)) -> Syntax.Decl(id, do_deref_type ty))
+            let body = match body with
+                       | Syntax.Ext e -> body
+                       | Syntax.Body b -> Syntax.Body (f b)
+            Syntax.FunDef(args, body, do_deref_type ty)
+        | Syntax.App(fu, args) -> Syntax.App(f fu, args |> List.map f)
+        | Syntax.Seq(s) -> Syntax.Seq(s |> List.map fp)        

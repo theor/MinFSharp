@@ -29,6 +29,8 @@ module TypingTests =
                f (Type.Int) (App(Var (Identifier.Id "add"), [Int 1; Int 2; Int 3]))
                d (Type.arrow[Type.Int; Type.Int]) (App (Var (Identifier.Id "add"), [Int 1]))
 
+               d (Type.Int) (App(Syntax.varId "id", [Int 1]))
+
                d (Type.Fun(Type.Poly 0u, Type.Poly 0u))
                  (Syntax.FunDef([Syntax.Decl(Identifier.Id "x", Type.genType)],
                                 Syntax.FBody.Body(Syntax.varId "x"),
