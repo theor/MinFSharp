@@ -1,0 +1,42 @@
+﻿<wpf:ResourceDictionary xml:space="preserve" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:s="clr-namespace:System;assembly=mscorlib" xmlns:ss="urn:shemas-jetbrains-com:settings-storage-xaml" xmlns:wpf="http://schemas.microsoft.com/winfx/2006/xaml/presentation">
+	<s:Boolean x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=3A4B58A35BC4B14087F9DD56FFC40D6F/@KeyIndexDefined">True</s:Boolean>
+	<s:Boolean x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=3A4B58A35BC4B14087F9DD56FFC40D6F/Applicability/=Live/@EntryIndexedValue">True</s:Boolean>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=3A4B58A35BC4B14087F9DD56FFC40D6F/Description/@EntryValue">f# NUnit test</s:String>
+	<s:Boolean x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=3A4B58A35BC4B14087F9DD56FFC40D6F/Field/=NAME/@KeyIndexDefined">True</s:Boolean>
+	<s:Int64 x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=3A4B58A35BC4B14087F9DD56FFC40D6F/Field/=NAME/Order/@EntryValue">0</s:Int64>
+	
+	<s:Boolean x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=3A4B58A35BC4B14087F9DD56FFC40D6F/Scope/=CF7C2F2066E462418ABD91975B64021C/@KeyIndexDefined">True</s:Boolean>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=3A4B58A35BC4B14087F9DD56FFC40D6F/Scope/=CF7C2F2066E462418ABD91975B64021C/CustomProperties/=mask/@EntryIndexedValue">*.fs*</s:String>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=3A4B58A35BC4B14087F9DD56FFC40D6F/Scope/=CF7C2F2066E462418ABD91975B64021C/Type/@EntryValue">InFileWithMask</s:String>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=3A4B58A35BC4B14087F9DD56FFC40D6F/Shortcut/@EntryValue">test</s:String>
+	
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=3A4B58A35BC4B14087F9DD56FFC40D6F/Text/@EntryValue">[&lt;Test&gt;]&#xD;
+    let ``$NAME$`` () = $END$</s:String>
+	<s:Boolean x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=B9521835748FA44EA279A4CF72E32411/@KeyIndexDefined">True</s:Boolean>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=B9521835748FA44EA279A4CF72E32411/Shortcut/@EntryValue">fx</s:String>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=B9521835748FA44EA279A4CF72E32411/Description/@EntryValue">f# fun</s:String>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=B9521835748FA44EA279A4CF72E32411/Text/@EntryValue">(fun x -&gt; $END$)</s:String>
+	<s:Boolean x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=B9521835748FA44EA279A4CF72E32411/Reformat/@EntryValue">True</s:Boolean>
+	<s:Boolean x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=B9521835748FA44EA279A4CF72E32411/ShortenQualifiedReferences/@EntryValue">True</s:Boolean>
+	<s:Boolean x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=B9521835748FA44EA279A4CF72E32411/Applicability/=Live/@EntryIndexedValue">True</s:Boolean>
+	<s:Boolean x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=B9521835748FA44EA279A4CF72E32411/Scope/=CF7C2F2066E462418ABD91975B64021C/@KeyIndexDefined">True</s:Boolean>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=B9521835748FA44EA279A4CF72E32411/Scope/=CF7C2F2066E462418ABD91975B64021C/Type/@EntryValue">InFileWithMask</s:String>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=B9521835748FA44EA279A4CF72E32411/Scope/=CF7C2F2066E462418ABD91975B64021C/CustomProperties/=mask/@EntryIndexedValue">*.fs; *.fsx</s:String>
+	<s:Boolean x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=D6018C940D7BD3478EF98C0C4F89EEC5/@KeyIndexDefined">True</s:Boolean>
+	<s:Boolean x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=D6018C940D7BD3478EF98C0C4F89EEC5/Applicability/=Live/@EntryIndexedValue">True</s:Boolean>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=D6018C940D7BD3478EF98C0C4F89EEC5/Description/@EntryValue">f# match</s:String>
+	<s:Boolean x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=D6018C940D7BD3478EF98C0C4F89EEC5/Field/=X/@KeyIndexDefined">True</s:Boolean>
+	<s:Int64 x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=D6018C940D7BD3478EF98C0C4F89EEC5/Field/=X/Order/@EntryValue">0</s:Int64>
+	<s:Boolean x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=D6018C940D7BD3478EF98C0C4F89EEC5/Field/=Y/@KeyIndexDefined">True</s:Boolean>
+	<s:Int64 x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=D6018C940D7BD3478EF98C0C4F89EEC5/Field/=Y/Order/@EntryValue">1</s:Int64>
+	<s:Boolean x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=D6018C940D7BD3478EF98C0C4F89EEC5/Field/=Z/@KeyIndexDefined">True</s:Boolean>
+	<s:Int64 x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=D6018C940D7BD3478EF98C0C4F89EEC5/Field/=Z/Order/@EntryValue">2</s:Int64>
+	<s:Boolean x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=D6018C940D7BD3478EF98C0C4F89EEC5/Reformat/@EntryValue">True</s:Boolean>
+	<s:Boolean x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=D6018C940D7BD3478EF98C0C4F89EEC5/Scope/=CF7C2F2066E462418ABD91975B64021C/@KeyIndexDefined">True</s:Boolean>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=D6018C940D7BD3478EF98C0C4F89EEC5/Scope/=CF7C2F2066E462418ABD91975B64021C/CustomProperties/=mask/@EntryIndexedValue">*.fs*</s:String>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=D6018C940D7BD3478EF98C0C4F89EEC5/Scope/=CF7C2F2066E462418ABD91975B64021C/Type/@EntryValue">InFileWithMask</s:String>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=D6018C940D7BD3478EF98C0C4F89EEC5/Shortcut/@EntryValue">mw</s:String>
+	<s:Boolean x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=D6018C940D7BD3478EF98C0C4F89EEC5/ShortenQualifiedReferences/@EntryValue">True</s:Boolean>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=D6018C940D7BD3478EF98C0C4F89EEC5/Text/@EntryValue">match $X$ with&#xD;
+| $Y$ -&gt; $Z$&#xD;
+| _ -&gt; $END$</s:String></wpf:ResourceDictionary>

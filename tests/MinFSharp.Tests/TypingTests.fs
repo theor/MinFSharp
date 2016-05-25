@@ -69,3 +69,20 @@ module TypingTests =
             ty |> shouldEqual t
         | _, _ -> failwith "WEIRD"
 
+    [<Test>]
+    let ``instantiate 'a -> 'b``() =
+        let t = Type.Fun(Type.Poly 0u, Type.Poly 1u)
+        let t2 = Typing.instantiate t [Some Type.Int; Some Type.Bool]
+        t2 |> shouldEqual (Type.Fun(Type.Int, Type.Bool))
+
+    [<Test>]
+    let ``instantiate 'a -> 'b -> 'a``() =
+        let t = Type.arrow [Type.Poly 0u; Type.Poly 1u; Type.Poly 0u]
+        let t2 = Typing.instantiate t [Some Type.Int; Some Type.Bool]
+        t2 |> shouldEqual (Type.arrow [Type.Int; Type.Bool; Type.Int])
+        
+    [<Test>]
+    let ``instantiate poly 'a -> 'b``() =
+        let t = Type.Fun(Type.Poly 0u, Type.Poly 1u)
+        let t2 = Typing.instantiate t [Some Type.Int; None]
+        t2 |> shouldEqual (Type.Fun(Type.Int, Type.Poly 1u))

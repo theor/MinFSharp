@@ -76,19 +76,9 @@ module Typing =
                 return Type.arrow((args |> List.map Syntax.declType) @ [tret])
             }
         | Syntax.App(func, args) ->
-            let rec typeArrow tf args =
-                trial {
-                    match tf, args with
-                    | Type.Fun(_, _), [] -> return tf
-                    | Type.Fun(x, y), h::t when x = h -> return! typeArrow y t
-                    | Type.Fun(x, _), h::_ when x <> h -> return! fail <| typeMismatch x h
-                    | t, [] -> return t
-                    | _ -> return! fail (Syntax.Pos.zero, UnknownError)
-                }
             trial {
                 let! tfunc = typed env func
-                let! targs = args |> List.map (typed env) |> Trial.collect
-                return! typeArrow tfunc targs
+                return! typedApp env tfunc args
             }
         | Syntax.Seq(s) ->
             trial {
@@ -96,32 +86,58 @@ module Typing =
                 let tss = List.zip (s |> List.map fst) ts
                 return (if tss.Length = 0 then Type.Unit else List.last ts)
             }
+    and typedApp env tyFunc args =
+        let rec typeArrow tf args =
+            trial {
+                match tf, args with
+                | Type.Fun(_, _), [] -> return tf
+                | Type.Fun(Type.Poly p, y), h::t ->
+                    let inst = y |> instantiate_at p h
+                    return! typeArrow inst t
+                | Type.Fun(x, y), h::t when x = h -> return! typeArrow y t
+                | Type.Fun(x, _), h::_ when x <> h -> return! fail <| typeMismatch x h
+                | t, [] -> return t
+                | _ -> return! fail (Syntax.Pos.zero, UnknownError)
+            }
+        trial {
+            let! targs = args |> List.map (typed env) |> Trial.collect
+            return! typeArrow tyFunc targs
+        }
+
+//    and unify tExp tAct =
+//        match tExp,tAct with
+//        | Type.Poly p, x -> ok x
+//        | _,_ -> fail (typeMismatch tExp tAct)
 
     and typedBinOp (env) op (ap, a) (bp, b) =
+        let opId = Syntax.opName op |> Identifier.Id
         trial {
-            let! tya = typed env a
-            let! tyb = typed env b
-            let opId = Syntax.opName op |> Identifier.Id
             match (!env).tryFind opId with
             | None -> return! fail (Syntax.Pos.zero, UnknownSymbol opId)
-            | Some tyop ->
-//                let! _top, tyop = typed env o
-                match tyop with
-                | Type.Fun(atya, Type.Fun(atyb, tret)) when atya = tya && atyb = tyb ->
-                    return tret
-                | Type.Fun(atya, Type.Fun(atyb, tret)) when atya <> tya || atyb <> tyb ->
-                    if atya <> tya then
-                        match tya with
-                        | Type.Var x when !x = None ->
-//                            env := Env.add
-                            return tret
-                        | _ -> return! fail (typeMismatch atya tya)
-                    else
-                        return! fail (typeMismatch atyb tyb)
-                | Type.Fun(_args,_ret) -> return! fail (typeMismatchAt (Type.arrow []) (tyop) ap)
-                | _ -> return! fail (typeMismatch (Type.arrow [tya; tyb; tya]) tyop)
+            | Some tyop -> return! typedApp env tyop [a;b]
         }
-    let rec typed_deref x =
+//        trial {
+//            let! tya = typed env a
+//            let! tyb = typed env b
+//            let opId = Syntax.opName op |> Identifier.Id
+//            match (!env).tryFind opId with
+//            | None -> return! fail (Syntax.Pos.zero, UnknownSymbol opId)
+//            | Some tyop ->
+//                let tyopInst = tyop |> instantiate_at 0u tya |> instantiate_at 1u tyb
+//                printfn "%A" tyopInst
+//                match tyop with
+//                | Type.Fun(atya, Type.Fun(atyb, tret)) when atya = tya && atyb = tyb ->
+//                    return tret
+//                | Type.Fun(atya, Type.Fun(atyb, tret)) when atya <> tya || atyb <> tyb ->
+//                    if atya <> tya then
+//                        match tya with
+//                        | _ -> return! fail (typeMismatch atya tya)
+//                    else
+//                        return! fail (typeMismatch atyb tyb)
+//                | Type.Fun(_args,_ret) -> return! fail (typeMismatchAt (Type.arrow []) (tyop) ap)
+//                | _ -> return! fail (typeMismatch (Type.arrow [tya; tyb; tya]) tyop)
+//        }
+    and typed_deref x =
         let rec do_deref_type t =
             match t with
             | Type.Var v -> match !v with
@@ -143,3 +159,25 @@ module Typing =
             Syntax.FunDef(args, body, do_deref_type ty)
         | Syntax.App(fu, args) -> Syntax.App(f fu, args |> List.map f)
         | Syntax.Seq(s) -> Syntax.Seq(s |> List.map fp)
+    and instantiate_at i t poly =
+        match poly with
+        | Type.Poly(a) when a = i -> t
+        | Type.Var v -> match !v with
+                        | None -> poly
+                        | Some tv -> tv
+        | Type.Fun(a,b) -> Type.Fun(instantiate_at i t a, instantiate_at i t b)
+        | _ -> poly
+    let rec instantiate t args =
+        args |> List.indexed |> List.fold(fun t (idx,tya) ->
+            match Seq.tryItem idx args with
+            | Some(Some i) -> instantiate_at (uint32 idx) i t
+            | _ -> t) t
+//        match t with
+//        | Type.Poly(a) -> match Seq.tryItem (int32 a) args with
+//                          | Some(Some i) -> i
+//                          | _ -> t
+//        | Type.Var v -> match !v with
+//                        | None -> t
+//                        | Some tv -> tv
+//        | Type.Fun(a,b) -> Type.Fun(instantiate a args, instantiate b args)
+//        | _ -> t
