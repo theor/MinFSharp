@@ -42,7 +42,7 @@ module Typing =
                     let! tyIns = typed newEnv ins
                     match vty with
                     | Type.Var(vt) when !vt = None ->
-                        vt := Some tyVa
+                        vt := Some(Type.Link tyVa)
                         return tyIns
                     | t when t = tyVa -> return tyIns
                     | _ -> return! fail <| typeMismatch tyVa vty
@@ -64,7 +64,7 @@ module Typing =
                 | Type.Var V when !V = None ->
                     let nextTypeVar = Env.nextPolyType env
                     V := Some nextTypeVar
-                    env := !env |> Env.add v nextTypeVar; ok (nextTypeVar)// typed env vd
+                    env := !env |> Env.add v (Type.Var V); ok (Type.Var V)// typed env vd
                 | _ -> ok (tyv)// typed env vd
         | Syntax.FunDef(args, Syntax.FBody.Ext _ext, ret) ->
             ok (Type.arrow((args |> List.map Syntax.declType) @ [ret]))
@@ -91,9 +91,10 @@ module Typing =
             trial {
                 match tf, args with
                 | Type.Fun(_, _), [] -> return tf
-                | Type.Fun(Type.Poly p, y), h::t ->
-                    let inst = y |> instantiate_at p h
-                    return! typeArrow inst t
+//FIXME
+//                | Type.Fun(Type.Poly p, y), h::t ->
+//                    let inst = y |> instantiate_at p h
+//                    return! typeArrow inst t
                 | Type.Fun(x, y), h::t when x = h -> return! typeArrow y t
                 | Type.Fun(x, _), h::_ when x <> h -> return! fail <| typeMismatch x h
                 | t, [] -> return t
@@ -141,7 +142,7 @@ module Typing =
         let rec do_deref_type t =
             match t with
             | Type.Var v -> match !v with
-                            | Some vv -> do_deref_type vv
+                            | Some(Type.Link vv) -> do_deref_type vv
                             | None -> t
             | _ -> t
         let f = typed_deref
@@ -161,10 +162,10 @@ module Typing =
         | Syntax.Seq(s) -> Syntax.Seq(s |> List.map fp)
     and instantiate_at i t poly =
         match poly with
-        | Type.Poly(a) when a = i -> t
         | Type.Var v -> match !v with
-                        | None -> poly
-                        | Some tv -> tv
+                        | Some(Type.Link tv) -> tv
+                        | Some(Type.Poly a) when a = i -> t
+                        | _ -> poly
         | Type.Fun(a,b) -> Type.Fun(instantiate_at i t a, instantiate_at i t b)
         | _ -> poly
     let rec instantiate t args =

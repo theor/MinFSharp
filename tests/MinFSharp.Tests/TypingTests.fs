@@ -20,7 +20,7 @@ module TypingTests =
     type Tcs() =
         static member Data() =
             [| d Type.Int (Int 42)
-               d (Type.Fun(Type.Poly 0u, Type.Poly 0u)) (Syntax.varId "id")
+               d (Type.Fun(Type.poly 0u, Type.poly 0u)) (Syntax.varId "id")
 
                d (Type.arrow[Type.Int; Type.Int; Type.Int]) (Var (Identifier.Id "(+)"))
                d (Type.arrow[Type.Int; Type.Int; Type.Int]) (Var (Identifier.Id "add"))
@@ -31,11 +31,11 @@ module TypingTests =
 
                d (Type.Int) (App(Syntax.varId "id", [Int 1]))
 
-               d (Type.Fun(Type.Poly 0u, Type.Poly 0u))
+               d (Type.Fun(Type.poly 0u, Type.poly 0u))
                  (Syntax.FunDef([Syntax.Decl(Identifier.Id "x", Type.genType())],
                                 Syntax.FBody.Body(Syntax.varId "x"),
                                 Type.genType()))
-               d (Type.Fun(Type.Poly 0u, Type.Poly 0u))
+               d (Type.Fun(Type.poly 0u, Type.poly 0u))
                  (Syntax.FunDef([Syntax.Decl(Identifier.Id "x", Type.genType())],
                                 Syntax.FBody.Body(Syntax.BinOp("+", pz <| Syntax.varId "x", pz <| Syntax.varId "x")),
                                 Type.genType()))
@@ -71,18 +71,18 @@ module TypingTests =
 
     [<Test>]
     let ``instantiate 'a -> 'b``() =
-        let t = Type.Fun(Type.Poly 0u, Type.Poly 1u)
+        let t = Type.Fun(Type.poly 0u, Type.poly 1u)
         let t2 = Typing.instantiate t [Some Type.Int; Some Type.Bool]
         t2 |> shouldEqual (Type.Fun(Type.Int, Type.Bool))
 
     [<Test>]
     let ``instantiate 'a -> 'b -> 'a``() =
-        let t = Type.arrow [Type.Poly 0u; Type.Poly 1u; Type.Poly 0u]
+        let t = Type.arrow [Type.poly 0u; Type.poly 1u; Type.poly 0u]
         let t2 = Typing.instantiate t [Some Type.Int; Some Type.Bool]
         t2 |> shouldEqual (Type.arrow [Type.Int; Type.Bool; Type.Int])
         
     [<Test>]
     let ``instantiate poly 'a -> 'b``() =
-        let t = Type.Fun(Type.Poly 0u, Type.Poly 1u)
+        let t = Type.Fun(Type.poly 0u, Type.poly 1u)
         let t2 = Typing.instantiate t [Some Type.Int; None]
-        t2 |> shouldEqual (Type.Fun(Type.Int, Type.Poly 1u))
+        t2 |> shouldEqual (Type.Fun(Type.Int, Type.poly 1u))

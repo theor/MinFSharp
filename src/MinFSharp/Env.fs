@@ -20,10 +20,10 @@ module Env =
             FunDef([Decl(Id "x",Type.Int); Decl(Id "y", Type.Int)],
                    Ext(fun [Int(x); Int(y)] -> Int (x+y)), Type.Int))
          Id "(+)", Type.arrow [Type.Int;Type.Int;Type.Int], Var(Id "add")
-         (Id "id", Type.arrow [Type.Poly 0u; Type.Poly 0u],
-             FunDef([Decl(Id "x", Type.Poly 0u)],
+         (Id "id", Type.arrow [Type.poly 0u; Type.poly 0u],
+             FunDef([Decl(Id "x", Type.poly 0u)],
                     Ext(fun [_x] -> Var(Id "x")),
-                    Type.Poly 0u))
+                    Type.poly 0u))
         ];
     let newTypeEnv() : Type =
         let types = defs() |> List.map (fun (id,t,_def) -> (id, t)) |> Map.ofList
