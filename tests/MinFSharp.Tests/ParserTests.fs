@@ -1,5 +1,13 @@
 ﻿namespace MinFSharp.Tests
 
+[<AutoOpen>]
+module Utils =
+    open MinFSharp
+    let sInt i = Syntax.Lit(Syntax.Int i)
+    let sUnit = Syntax.Lit(Syntax.Unit)
+    let sBool b = Syntax.Lit(Syntax.Bool b)
+    let sFloat f = Syntax.Lit(Syntax.Float f)
+
 module ParserTests =
 
     open System
@@ -19,38 +27,38 @@ module ParserTests =
     let i (tcs:TestCaseData) = tcs.Ignore()
     type TCS() =
         static member Data() =
-            [|  d "42" (Int 42)
-                d "(42)" (Int 42)
+            [|  d "42" (sInt 42)
+                d "(42)" (sInt 42)
                 d "x" (Var <| Id "x")
-                d "x-1" (BinOp("-", varId "x" @@ (1L,1L), Int 1 @@(1L,3L)))
+                d "x-1" (BinOp("-", varId "x" @@ (1L,1L), sInt 1 @@(1L,3L)))
 //                d "=" (Var <| Id "=")
-                d "1<2" (BinOp("<", Int 1 @@ (1L,1L), Int 2 @@ (1L,3L)))
-                d "1 <!> 2" (BinOp("<!>", Int 1 @@ (1L,1L), Int 2 @@ (1L,7L)))
-                d "1<!>2" (BinOp("<!>", Int 1 @@ (1L,1L), Int 2 @@ (1L,5L)))
-                d "1 >> 2" (BinOp(">>", Int 1 @@ (1L,1L), Int 2 @@ (1L,6L)))
-                d "1 !@~<> 2" (BinOp("!@~<>", Int 1 @@ (1L,1L), Int 2 @@ (1L,9L)))
-                d "f 42 13" (appId "f" [Int 42; Int 13])
-                d "(f 42 13)" (appId "f" [Int 42; Int 13])
-                d "(f (g 42) 13)" (App(Var(Id "f"), [appId "g" [Int 42]; Int 13]))
-                d "let x = 7 in\nx" (LetIn(Syntax.Decl((Id "x"), Type.genType()), Int 7,
+                d "1<2" (BinOp("<", sInt 1 @@ (1L,1L), sInt 2 @@ (1L,3L)))
+                d "1 <!> 2" (BinOp("<!>", sInt 1 @@ (1L,1L), sInt 2 @@ (1L,7L)))
+                d "1<!>2" (BinOp("<!>", sInt 1 @@ (1L,1L), sInt 2 @@ (1L,5L)))
+                d "1 >> 2" (BinOp(">>", sInt 1 @@ (1L,1L), sInt 2 @@ (1L,6L)))
+                d "1 !@~<> 2" (BinOp("!@~<>", sInt 1 @@ (1L,1L), sInt 2 @@ (1L,9L)))
+                d "f 42 13" (appId "f" [sInt 42; sInt 13])
+                d "(f 42 13)" (appId "f" [sInt 42; sInt 13])
+                d "(f (g 42) 13)" (App(Var(Id "f"), [appId "g" [sInt 42]; sInt 13]))
+                d "let x = 7 in\nx" (LetIn(Syntax.Decl((Id "x"), Type.genType()), sInt 7,
                                            Some <| Var(Id "x")))
-                d "let x = 1 in\nlet y = 2 in\n x+y" (LetIn(Syntax.Decl((Id "x"), Type.genType()), Int 1,
-                                                            (LetIn(Syntax.Decl((Id "y"), Type.genType()), Int 2,
+                d "let x = 1 in\nlet y = 2 in\n x+y" (LetIn(Syntax.Decl((Id "x"), Type.genType()), sInt 1,
+                                                            (LetIn(Syntax.Decl((Id "y"), Type.genType()), sInt 2,
                                                                    BinOp("+", Var(Id "x") @@ (3L,2L), Var(Id "y") @@ (3L,4L))|>Some))|>Some))
-                d "1;2" (Seq [Int 1 @@ (1L,1L); Int 2 @@ (1L,3L)])
-                d "1\n2" (Seq [Int 1 @@ (1L,1L); Int 2 @@ (2L,1L)])
-                d "let x : int = 7 in\nx" (LetIn(Syntax.Decl((Id "x"), Type.Int), Int 7,
+                d "1;2" (Seq [sInt 1 @@ (1L,1L); sInt 2 @@ (1L,3L)])
+                d "1\n2" (Seq [sInt 1 @@ (1L,1L); sInt 2 @@ (2L,1L)])
+                d "let x : int = 7 in\nx" (LetIn(Syntax.Decl((Id "x"), Type.Int), sInt 7,
                                                  Some <| Var(Id "x")))
-                d "let x : bool = 7 in\nx" (LetIn(Syntax.Decl((Id "x"), Type.Bool), Int 7,
+                d "let x : bool = 7 in\nx" (LetIn(Syntax.Decl((Id "x"), Type.Bool), sInt 7,
                                                  Some <| Var(Id "x")))
-                d "let x : int array = () in ()" (LetIn(Syntax.Decl(Id "x", Type.Array Type.Int), Unit, Some Unit))
-                d "let x : int * bool = () in ()" (LetIn(Syntax.Decl(Id "x", Type.Tuple [Type.Int; Type.Bool]), Unit, Some Unit))
-                d "let x : int -> bool -> float = () in ()" (LetIn(Syntax.Decl(Id "x", Type.arrow [Type.Int; Type.Bool; Type.Float]), Unit, Some Unit))
-                d "true" (Bool true)
-                d "false" (Bool false)
-                d "if true then 1 else 2" (If(Bool true @@ (1L, 4L), Int 1 @@ (1L,14L), Int 2 @@ (1L,21L)))
-                d "if true then\n  1\nelse\n  2" (If(Bool true @@ (1L,4L), Int 1 @@ (2L,3L), Int 2 @@ (4L,3L)))
-                d "if (f 42) then 1 else 2" (If((appId "f" [Int 42]) @@ (1L,4L), Int 1 @@ (1L,16L), Int 2 @@ (1L,23L)))
+                d "let x : int array = () in ()" (LetIn(Syntax.Decl(Id "x", Type.Array Type.Int), sUnit, Some sUnit))
+                d "let x : int * bool = () in ()" (LetIn(Syntax.Decl(Id "x", Type.Tuple [Type.Int; Type.Bool]), sUnit, Some sUnit))
+                d "let x : int -> bool -> float = () in ()" (LetIn(Syntax.Decl(Id "x", Type.arrow [Type.Int; Type.Bool; Type.Float]), sUnit, Some sUnit))
+                d "true" (sBool true)
+                d "false" (sBool false)
+                d "if true then 1 else 2" (If(sBool true @@ (1L, 4L), sInt 1 @@ (1L,14L), sInt 2 @@ (1L,21L)))
+                d "if true then\n  1\nelse\n  2" (If(sBool true @@ (1L,4L), sInt 1 @@ (2L,3L), sInt 2 @@ (4L,3L)))
+                d "if (f 42) then 1 else 2" (If((appId "f" [sInt 42]) @@ (1L,4L), sInt 1 @@ (1L,16L), sInt 2 @@ (1L,23L)))
                 d "let min x y = if x < y then x else y" (LetIn(Syntax.Decl(Id "min", Type.genType()),
                                                                 (FunDef([Decl(Id "x", Type.genType());Decl(Id "y", Type.genType())],
                                                                         FBody.Body ((If (BinOp ("<",Var (Id "x") @@ (1L,18L), Var (Id "y")@@ (1L,22L)) @@ (1L,18L),
@@ -65,22 +73,22 @@ module ParserTests =
                      else n * (fact (n - 1))"
                    (LetIn(Syntax.Decl(Id "fact", Type.genType()),
                           FunDef([Decl(Id "n", Type.genType())],
-                                 Body(If(BinOp ("<=",Var (Id "n") @@ (1L,16L),Int 1 @@ (1L,21L)) @@ (1L,16L),
-                                         Int 1 @@ (1L,28L),
+                                 Body(If(BinOp ("<=",Var (Id "n") @@ (1L,16L),sInt 1 @@ (1L,21L)) @@ (1L,16L),
+                                         sInt 1 @@ (1L,28L),
                                          BinOp("*",Var (Id "n") @@ (2L,27L),
                                                    App (Var (Id "fact"),
-                                                        [BinOp ("-", Var (Id "n") @@ (2L,38L), Int 1 @@ (2L,42L))]) @@ (2L,31L)) @@ (2L,27L))),
+                                                        [BinOp ("-", Var (Id "n") @@ (2L,38L), sInt 1 @@ (2L,42L))]) @@ (2L,31L)) @@ (2L,27L))),
                                  Type.genType()),None))
                 d "let fact n =\
                      if n <= 1 then 1
                      else n * (fact (n-1))"
                    (LetIn(Syntax.Decl(Id "fact", Type.genType()),
                           FunDef([Decl(Id "n", Type.genType())],
-                                 Body(If(BinOp ("<=",Var (Id "n") @@ (1L,16L),Int 1 @@ (1L,21L)) @@ (1L,16L),
-                                         Int 1 @@ (1L,28L),
+                                 Body(If(BinOp ("<=",Var (Id "n") @@ (1L,16L),sInt 1 @@ (1L,21L)) @@ (1L,16L),
+                                         sInt 1 @@ (1L,28L),
                                          BinOp("*",Var (Id "n") @@ (2L,27L),
                                                    App (Var (Id "fact"),
-                                                        [BinOp ("-", Var (Id "n") @@ (2L,38L), Int 1 @@ (2L,40L))]) @@ (2L,31L)) @@ (2L,27L))),
+                                                        [BinOp ("-", Var (Id "n") @@ (2L,38L), sInt 1 @@ (2L,40L))]) @@ (2L,31L)) @@ (2L,27L))),
                                  Type.genType()),None))
             |]
 
@@ -126,9 +134,9 @@ module ParserTests =
     let ``fbody equality test`` () =
         let pz a = a @= Pos.zero
         let a = FunDef([Decl(Id "n", Type.genType())],
-                                 Body(If(BinOp ("<=",Var (Id "n") @= Pos.zero, Int 1 @= Pos.zero) |> pz,
-                                         Int 1 |> pz,
+                                 Body(If(BinOp ("<=",Var (Id "n") @= Pos.zero, sInt 1 @= Pos.zero) |> pz,
+                                         sInt 1 |> pz,
                                          BinOp("*",Var (Id "n") @= Pos.zero,
                                                    App (Var (Id "fact"),
-                                                        [BinOp ("-", Var (Id "n") @= Pos.zero,Int -1 @= Pos.zero)]) @= Pos.zero) |> pz)), Type.genType())
+                                                        [BinOp ("-", Var (Id "n") @= Pos.zero,sInt -1 @= Pos.zero)]) @= Pos.zero) |> pz)), Type.genType())
         a |> shouldEqual a

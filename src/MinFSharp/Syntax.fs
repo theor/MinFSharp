@@ -31,11 +31,13 @@ module Syntax =
     and Op = string
     and post = Pos * t
     and VarDecl = Decl of id:Identifier.t * ty:Type.t
-    and t =
+    and Lit = 
     | Unit
     | Bool of bool
     | Int of int
     | Float of float
+    and t =
+    | Lit of Lit
     | BinOp of Op * post * post
     | LetIn of id:VarDecl * value:t * scope:(t option)
     | If of post * post * post

@@ -8,8 +8,7 @@ module Interpreter =
     type EvalResult = Result<Syntax.t,EvalError>
     let rec eval (e:Env.Symbol)(a:Syntax.t) : EvalResult =
         match a with
-        | Unit -> ok Unit
-        | Bool(_) | Int(_) | Float(_) -> ok a
+        | Lit _ -> ok a
         | LetIn(Decl(id,ty), value, Some body) -> eval (e |> Map.add id value) body
         | Var(id) ->
             trial {
@@ -34,7 +33,7 @@ module Interpreter =
         | If((_posConf, eif), (_posThen, ethen), (_posElse, eelse)) ->
             trial {
                 let! rif = eval e eif
-                return! if rif = Bool true then eval e ethen else eval e eelse
+                return! if rif = Lit(Bool true) then eval e ethen else eval e eelse
             }
         | Seq(_) -> failwith "Not implemented yet"
         //| _ -> failwith "Not implemented yet"

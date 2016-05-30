@@ -7,4 +7,4 @@ module CodeGenTests =
 
     [<Test>]
     let ``gen asm``() =
-        Codegen.gen (Syntax.Int 42) "test.exe"
+        Codegen.gen (Syntax.Lit(Syntax.Int 42)) "test.exe"

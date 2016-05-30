@@ -18,7 +18,7 @@ module Env =
         [
          (Id "add", (Type.arrow [Type.Int;Type.Int;Type.Int]),
             FunDef([Decl(Id "x",Type.Int); Decl(Id "y", Type.Int)],
-                   Ext(fun [Int(x); Int(y)] -> Int (x+y)), Type.Int))
+                   Ext(fun [Lit(Int x); Lit(Int y)] -> Lit(Int (x+y))), Type.Int))
          Id "(+)", Type.arrow [Type.Int;Type.Int;Type.Int], Var(Id "add")
          (Id "id", Type.arrow [Type.poly 0u; Type.poly 0u],
              FunDef([Decl(Id "x", Type.poly 0u)],

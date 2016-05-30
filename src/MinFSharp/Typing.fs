@@ -24,10 +24,10 @@ module Typing =
 
     let rec typed (env:Env.Type ref) x : TypedAstResult =
         match x with
-        | Syntax.Unit -> ok Type.Unit
-        | Syntax.Bool(_) -> ok Type.Bool
-        | Syntax.Int(_) -> ok Type.Int
-        | Syntax.Float(_) -> ok Type.Float
+        | Syntax.Lit Syntax.Unit -> ok Type.Unit
+        | Syntax.Lit(Syntax.Bool(_)) -> ok Type.Bool
+        | Syntax.Lit(Syntax.Int(_)) -> ok Type.Int
+        | Syntax.Lit(Syntax.Float(_)) -> ok Type.Float
         | Syntax.BinOp(op, a, b) -> typedBinOp env op a b
 
         | Syntax.LetIn(Syntax.Decl(vid, vty), va, insOpt) ->
@@ -131,7 +131,7 @@ module Typing =
         let f = typed_deref
         let fp (pos,x) = (pos, f x)
         match x with
-        | Syntax.Unit | Syntax.Bool(_) | Syntax.Int(_) | Syntax.Float(_) | Syntax.Var(_) -> x
+        | Syntax.Lit _ | Syntax.Var _ -> x
         | Syntax.BinOp(op, (posa, a), (posb, b)) -> Syntax.BinOp(op, (posa, f a), (posb, f b))
         | Syntax.LetIn(Syntax.Decl(id,ty), value, scope) ->Syntax.LetIn(Syntax.Decl(id, do_deref_type ty), value, scope)
         | Syntax.If(ei, et, ee) -> Syntax.If(fp ei, fp et, fp ee)

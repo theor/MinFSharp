@@ -19,17 +19,17 @@ module TypingTests =
     let pz p = p @= Pos.zero
     type Tcs() =
         static member Data() =
-            [| d Type.Int (Int 42)
+            [| d Type.Int (sInt 42)
                d (Type.Fun(Type.poly 0u, Type.poly 0u)) (Syntax.varId "id")
 
                d (Type.arrow[Type.Int; Type.Int; Type.Int]) (Var (Identifier.Id "(+)"))
                d (Type.arrow[Type.Int; Type.Int; Type.Int]) (Var (Identifier.Id "add"))
-               d (Type.Int) (App(Var (Identifier.Id "add"), [Int 1; Int 2]))
-               f (Type.Int) (App(Var (Identifier.Id "add"), [Int 1; Float 2.0]))
-               f (Type.Int) (App(Var (Identifier.Id "add"), [Int 1; Int 2; Int 3]))
-               d (Type.arrow[Type.Int; Type.Int]) (App (Var (Identifier.Id "add"), [Int 1]))
+               d (Type.Int) (App(Var (Identifier.Id "add"), [sInt 1; sInt 2]))
+               f (Type.Int) (App(Var (Identifier.Id "add"), [sInt 1; sFloat 2.0]))
+               f (Type.Int) (App(Var (Identifier.Id "add"), [sInt 1; sInt 2; sInt 3]))
+               d (Type.arrow[Type.Int; Type.Int]) (App (Var (Identifier.Id "add"), [sInt 1]))
 
-               d (Type.Int) (App(Syntax.varId "id", [Int 1]))
+               d (Type.Int) (App(Syntax.varId "id", [sInt 1]))
 
                d (Type.Fun(Type.poly 0u, Type.poly 0u))
                  (Syntax.FunDef([Syntax.Decl(Identifier.Id "x", Type.genType())],
@@ -40,18 +40,18 @@ module TypingTests =
                                 Syntax.FBody.Body(Syntax.BinOp("+", pz <| Syntax.varId "x", pz <| Syntax.varId "x")),
                                 Type.genType()))
 
-               d Type.Int (BinOp("+", pz <| Int 42, pz <| Int 42))
-               f Type.Int (BinOp("+", pz <| Int 42, pz <| Float 42.0))
+               d Type.Int (BinOp("+", pz <| sInt 42, pz <| sInt 42))
+               f Type.Int (BinOp("+", pz <| sInt 42, pz <| sFloat 42.0))
 
-               d Type.Int (LetIn(Syntax.Decl(Id("x"),Type.genType()), (Int 3), Some <| Int 42))
-               d Type.Int (LetIn(Syntax.Decl(Id("x"),Type.genType()), (Int 3), Some <| varId "x"))
-               d Type.Int (LetIn(Syntax.Decl(Id("x"),Type.genType()), (Int 3),
+               d Type.Int (LetIn(Syntax.Decl(Id("x"),Type.genType()), (sInt 3), Some <| sInt 42))
+               d Type.Int (LetIn(Syntax.Decl(Id("x"),Type.genType()), (sInt 3), Some <| varId "x"))
+               d Type.Int (LetIn(Syntax.Decl(Id("x"),Type.genType()), (sInt 3),
                                  Some <| varId "x"))
-               f Type.Int (LetIn(Syntax.Decl(Id("x"),Type.Unit), (Int 3), Some <| varId "x"))
+               f Type.Int (LetIn(Syntax.Decl(Id("x"),Type.Unit), (sInt 3), Some <| varId "x"))
 
-               d Type.Int (If(Bool true |> pz, Int 3 |> pz, Int 4 |> pz))
-               f Type.Int (If(Bool true |> pz, Float 4.0 |> pz, Int 4 |> pz))
-               f Type.Int (If(Float 4.0 |> pz, Int 4 |> pz, Int 5 |> pz))
+               d Type.Int (If(sBool true |> pz, sInt 3 |> pz, sInt 4 |> pz))
+               f Type.Int (If(sBool true |> pz, sFloat 4.0 |> pz, sInt 4 |> pz))
+               f Type.Int (If(sFloat 4.0 |> pz, sInt 4 |> pz, sInt 5 |> pz))
             |]// |> Array.map d
 
     [<Test>]

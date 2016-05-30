@@ -10,7 +10,7 @@ module Parser =
 
     type ParsingError = string * UserState
 
-    type ParsingResult = Result<Syntax.t, ParsingError>
+    type ParsingResult = Result<t, ParsingError>
 
     let keywords = Set([ "="; "let"; "in"; "if"; "then"; "else" ])
     let ws = many (anyOf " \t") <!> "ws"// spaces
@@ -24,8 +24,8 @@ module Parser =
     let withPos p = getPos .>>. p
 
     let parseU (f:UserState -> Unit) (s : string) : ParsingResult =
-        let pInt = pint32 .>>. getPosition |>> (fun (i,p) ->Syntax.Int(i)) <!> "pInt"
-        let pBool = stringReturn "true" (Syntax.Bool true) <|> stringReturn "false" (Syntax.Bool false) <!> "pBool"
+        let pInt = pint32 .>>. getPosition |>> (fun (i,p) ->Lit(Int i)) <!> "pInt"
+        let pBool = stringReturn "true" (Lit <| Bool true) <|> stringReturn "false" (Lit <| Bool false) <!> "pBool"
         let pId =
             many1Satisfy2 isLetter (fun c -> isLetter c || isDigit c)
             >>= (fun x ->
@@ -46,7 +46,7 @@ module Parser =
                         .>> ws .>>. (opt <| str "array")
                         |>> (fun (t, arr) -> if Option.isNone arr then t else Type.Array t)
         let pTypeTuple = sepBy1 pTypeAnn (str "*") |>> (fun l -> if l.Length = 1 then l.Head else Type.Tuple l)
-        let pTypeFun = sepBy pTypeTuple (str "->")
+        let pTypeFun = sepBy1 pTypeTuple (str "->")
                        |>> (fun l ->
                             if l.Length = 1 then l.Head else
                             Type.arrow l)
@@ -58,46 +58,46 @@ module Parser =
         let pDecVal = pId .>> ws .>>. pOptTypeAnn .>> str "=" .>>. pExp |>> (fun ((id, t), exp) -> ((id, t), exp))
 
         let pFunArgs = many1 (pId .>>? ws1)
-                       |>> List.map (fun x -> Syntax.Decl(x, Type.genType()))
+                       |>> List.map (fun x -> Decl(x, Type.genType()))
         let pDecFun = tuple4 (pId .>>? ws1) pFunArgs (str "=") (pExp .>> ws)
-                      |>> (fun (id, args, _, body) -> ((id, Type.genType()), Syntax.FunDef(args, FBody.Body body, Type.genType())))
+                      |>> (fun (id, args, _, body) -> ((id, Type.genType()), FunDef(args, FBody.Body body, Type.genType())))
                       <!> "pDecFun"
 
         let pDec = attempt pDecFun <|> pDecVal
         let pDeclist = pDec
         let pLet = (str "let") >>. pDeclist .>>. (opt ((strn "in") >>. pExp))
-                   |>> (fun ((dVar, dVal), exp) -> Syntax.LetIn(Decl dVar, dVal, exp))
+                   |>> (fun ((dVar, dVal), exp) -> LetIn(Decl dVar, dVal, exp))
 
         let pSimpleExp = choice [
-                                  stringReturn "()" Syntax.Unit
+                                  stringReturn "()" (Lit Unit)
                                   pInt
                                   pBool
-                                  attempt (pId |>> Syntax.Var)
+                                  attempt (pId |>> Var)
                                   attempt pParenExp
                                   pLet
                                   ] <!> "pSimpleExp"
         let pAppExps = pSimpleExp .>>. opt (many (ws1 >>? pSimpleExp)) .>> ws
                        |>> (fun (h,l) -> match l with
                                          | None | Some [] -> h
-                                         | Some l -> Syntax.App(h, l))
+                                         | Some l -> App(h, l))
                        <!> "pAppExps"
         let pOpExp, pOpExpImpl = createParserForwardedToRef()
 
         let pBinOp = attempt ( many1 (anyOf "!%&*+-./<=>@^|~?") ) .>> ws |>> (List.toArray >> System.String) <!> "pBinOp"
 
         let pBinOpApp = attempt (tuple3 (withPos pAppExps) pBinOp (withPos pOpExp))
-                        |>> (fun (l,o,r) -> Syntax.BinOp(o, l, r))
+                        |>> (fun (l,o,r) -> BinOp(o, l, r))
         pOpExpImpl := choice [pBinOpApp; pAppExps] .>> ws
                       <!> "pOpExp"
 
         let pIf =
             str "if" >>. (withPos pOpExp) .>> strn "then" .>>. (withPos pOpExp) .>> nws .>> strn "else" .>> nws .>>. (withPos pOpExp)
-            |>> (fun ((eIf, eThen), eElse) -> Syntax.If(eIf, eThen, eElse))
+            |>> (fun ((eIf, eThen), eElse) -> If(eIf, eThen, eElse))
             <!> "pIf"
         let pBlockExp = pIf <|> pOpExp <!> "pBlockExp"
         pExpImpl := sepBy1 (withPos pBlockExp) (strn ";" |>> ignore
                                       <|> (anyOf "\n" .>> ws |>> ignore <!> "p \\n"))
-                    |>> (fun l -> if List.length l = 1 then snd l.Head else Syntax.Seq l)
+                    |>> (fun l -> if List.length l = 1 then snd l.Head else Seq l)
                     <!> "pExp"
         let p = pExp
         let r =
