@@ -53,6 +53,7 @@ module TypingTests =
                f Type.Int (If(Bool true |> pz, Float 4.0 |> pz, Int 4 |> pz))
                f Type.Int (If(Float 4.0 |> pz, Int 4 |> pz, Int 5 |> pz))
             |]// |> Array.map d
+
     [<Test>]
     [<TestCaseSource(typeof<Tcs>, "Data")>]
     let ``test typing`` (ast:Syntax.t) t passes =

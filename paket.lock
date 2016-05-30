@@ -30,6 +30,7 @@ NUGET
   remote: https://www.nuget.org/api/v2
   specs:
     FParsec (1.0.2)
+    Mono.Cecil (0.9.6.1)
 GITHUB
   remote: fsprojects/Chessie
   specs:
