@@ -126,7 +126,7 @@ module Typing =
             match t with
             | Type.Var v -> match !v with
                             | Some(Type.Link vv) -> do_deref_type vv
-                            | None -> t
+                            | _ -> t
             | _ -> t
         let f = typed_deref
         let fp (pos,x) = (pos, f x)
