@@ -21,7 +21,7 @@ module Codegen =
         def.CustomAttributes.Add(attr)
         def
 
-    type CodeGenError = NotFound of Identifier.t
+    type CodeGenError = NotFound of Identifier.t | TypingError of Typing.TypingError
 
     let inline (<!>) (il:ILProcessor) op = il.Append <| il.Create(op); il
     let inline (<!!>) (il:ILProcessor) op = il.Append <| op; il
@@ -55,6 +55,15 @@ module Codegen =
         | BinOp(op, (_lp,l), (_rp,r)) ->
             funCall il (Var(opId op)) senv varEnv [l;r]            
         | App(fu, args) -> funCall il fu senv varEnv args
+        | LetIn(Decl(Identifier.Id id, vt), (FunDef(_,body,_) as fd), scope) ->
+            
+            let declTy = il.Body.Method.DeclaringType
+            let m = MethodDefinition(id, MethodAttributes.Static ||| MethodAttributes.Public, declTy.Module.TypeSystem.Int32)
+            declTy.Methods.Add m
+            match body with
+            | FBody.Body b -> genMethodBody m senv varEnv b
+            | _ -> failwithf "Should be standard method body"
+            
         | LetIn(Decl(id, vt), value, scope) ->
             let var = VariableDefinition(il.Body.Method.Module.TypeSystem.Int32)
             varEnv := Map.add id var !varEnv
@@ -84,11 +93,15 @@ module Codegen =
                 il.Append nopEnd
                 return ()
             }
+        | FunDef(_,body,_) -> failwith "NO FUN DEF"
+            
         | _ -> failwithf "Not implemented yet: %A" ast
-    let genMethodBody (m:MethodDefinition) (senv:Env.Symbol ref) varEnv (ast:Syntax.t) =
+    and genMethodBody (m:MethodDefinition) (senv:Env.Symbol ref) varEnv (ast:Syntax.t) =
         let il = m.Body.GetILProcessor()
-        genAst il senv varEnv ast
-        il.Create OpCodes.Ret |> il.Append
+        trial {
+            let! a = genAst il senv varEnv ast
+            return il.Create OpCodes.Ret |> il.Append
+        }
 
     let gen (ast:Syntax.t) (tenv:Env.Type ref) (senv:Env.Symbol ref) (path:string) =
         let varEnv = ref Map.empty
@@ -106,8 +119,8 @@ module Codegen =
         mMain.Parameters.Add(ParameterDefinition(def |> tr<string array>))
         def.MainModule.EntryPoint <- mMain
         tProgram.Methods.Add mMain
-
-        genMethodBody mMain senv (varEnv) ast
+        trial {
+            let! a = genMethodBody mMain senv (varEnv) ast
 //        let il = mMain.Body.GetILProcessor()
 //        let writeLine = def |> mr<System.Console> "WriteLine" [| typeof<string> |]
 //        il <!> OpCodes.Ldarg_0
@@ -116,5 +129,6 @@ module Codegen =
 //           <!!> il.Create (OpCodes.Call, writeLine)
 //           <!> OpCodes.Ret
 
-        def.Write path
-        ()
+            def.Write path
+            return ()
+        }

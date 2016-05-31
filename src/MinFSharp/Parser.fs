@@ -16,6 +16,7 @@ module Parser =
     let ws = many (anyOf " \t") <!> "ws"// spaces
     let ws1 = many1 (anyOf " \t") <!> "ws1"// spaces
     let nws = spaces
+    let pstring s = skipString s <!> ("pstringws '" + s + "'")
     let pstringws s = skipString s <!> ("pstringws '" + s + "'") .>> ws
     let str = pstringws
     let strn s = pstring s .>> nws
@@ -57,10 +58,13 @@ module Parser =
                        <!> "pOptTypeAnn"
         let pDecVal = pId .>> ws .>>. pOptTypeAnn .>> str "=" .>>. pExp |>> (fun ((id, t), exp) -> ((id, t), exp))
 
-        let pFunArgs = many1 (pId .>>? ws1)
-                       |>> List.map (fun x -> Decl(x, Type.genType()))
-        let pDecFun = tuple4 (pId .>>? ws1) pFunArgs (str "=") (pExp .>> ws)
-                      |>> (fun (id, args, _, body) -> ((id, Type.genType()), FunDef(args, FBody.Body body, Type.genType())))
+        let pFunArgPar = attempt <| between (str "(") (pstring ")") (pId .>>.? pOptTypeAnn) <!> "pFunArgPar"
+        let pFunArgs = many1 (choice [pFunArgPar;pId .>>. preturn (Type.genType())] .>>? ws)
+                       |>> List.map (fun (x,t) -> Decl(x, t))
+                       <!> "pFunArgs"
+        let pDecFun = tuple5 (pId .>>? ws1) pFunArgs pOptTypeAnn (str "=") (pExp .>> ws)
+                      |>> (fun (id, args, ret, _, body) ->
+                             ((id, Type.genType()), FunDef(args, FBody.Body body, ret)))
                       <!> "pDecFun"
 
         let pDec = attempt pDecFun <|> pDecVal
