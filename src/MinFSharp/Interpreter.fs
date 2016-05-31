@@ -22,7 +22,7 @@ module Interpreter =
                 | Body b ->
                     let ne = List.zip fargs fparams |> List.fold (fun env (Decl(ai,_aty),fp) -> Map.add ai fp env) e
                     eval ne b
-                | Ext ext -> ok <| ext fparams
+                | Ext ext -> fail ApplyNotFunction// ok <| ext fparams
             | Ok _ -> fail ApplyNotFunction
             | Bad(_e) -> fail _e.Head
         | FunDef(_fargs, _body, _tret) -> ok a

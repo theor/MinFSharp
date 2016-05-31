@@ -16,7 +16,6 @@ module TypingTests =
     let f ty (ast:Syntax.t) =
         TestCaseData(ast, ty, false).SetName(sprintf "%A" ast)
 
-    let pz p = p @= Pos.zero
     type Tcs() =
         static member Data() =
             [| d Type.Int (sInt 42)

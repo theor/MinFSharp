@@ -3,10 +3,16 @@
 [<AutoOpen>]
 module Utils =
     open MinFSharp
-    let sInt i = Syntax.Lit(Syntax.Int i)
-    let sUnit = Syntax.Lit(Syntax.Unit)
-    let sBool b = Syntax.Lit(Syntax.Bool b)
-    let sFloat f = Syntax.Lit(Syntax.Float f)
+    open MinFSharp.Syntax
+    let sInt i = Lit(Int i)
+    let sUnit = Lit(Unit)
+    let sBool b = Lit(Bool b)
+    let sFloat f = Lit(Float f)
+
+    let pz p = p @= Pos.zero
+
+    let binOp op l r = BinOp(op, pz l, pz r)
+    let sif cond ethen eelse = If(pz cond, pz ethen, pz eelse)
 
 module ParserTests =
 

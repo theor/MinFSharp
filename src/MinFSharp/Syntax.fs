@@ -14,9 +14,12 @@ module Syntax =
         static member from(p:FParsec.Position) = {line=p.Line; col=p.Column}
         static member from(l,c) = {line=l; col=c}
         static member zero = Pos.from(0L, 0L)
+
     let zeroPos = FParsec.Position(null, 0L, 0L, 0L)
+
+    type Ext = Opcode of Mono.Cecil.Cil.OpCode | Method of System.Reflection.MethodInfo
     [<CustomEquality;NoComparison>]
-    type FBody = | Body of body:t | Ext of ext:(t list -> t)
+    type FBody = | Body of body:t | Ext of Ext
     with
         override x.Equals(yobj) =
             match yobj with
@@ -27,7 +30,7 @@ module Syntax =
                 | _,_ -> false
             | _ -> false
         override x.GetHashCode() = 0
-//    and Op = Lt | Gt | Eq | Ne
+
     and Op = string
     and post = Pos * t
     and VarDecl = Decl of id:Identifier.t * ty:Type.t
@@ -49,6 +52,7 @@ module Syntax =
         override x.ToString() = sprintf "%A" x
 
     let opName (o:Op) = sprintf "(%s)" o
+    let opId (o:Op) = Identifier.Id <| opName o
     let declType (Decl(_id, ty)) = ty
 
     let varId s = Var(Identifier.Id s)
