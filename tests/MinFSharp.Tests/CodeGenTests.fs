@@ -8,10 +8,10 @@ module CodeGenTests =
     open NUnit.Framework
     open Chessie.ErrorHandling
     open FsUnitTyped
-    
+
     let print l = Syntax.App (Var(Id "printf"), l)
     type Data = Ast of Syntax.t | Txt of string
-    let t (ast:Syntax.t) = TestCaseData(Ast ast)
+    let t (ast:Syntax.t) = TestCaseData(Ast ast).SetName(ast.ToString())
     let p (str) = TestCaseData(Txt str).SetName(str)
 
     type TCS() =
@@ -23,8 +23,12 @@ module CodeGenTests =
                t (LetIn(Syntax.Decl(Id("x"),Type.genType()), (sInt 3), Some <| (print [varId "x"])))
                t (sif (sBool true) (print [sInt 1]) (print [sInt 2]))
                t (sif (binOp "<" (sInt 2) (sInt 1)) (print [sInt 1]) (print [sInt 2]))
+               p "1"
                p "if 1 < 2 then printf 1 else printf 2"
                p "let f (x:int) (y:int) : int = x + y"
+               p "let f (x:int) (y:int) : int = x + y in f 1 2"
+               p "let f (x:int) (y:int) : int = x + y in printf (f 1 2); printf (f 2 3)"
+               p "printf 1; printf 2"
             |]
 
     [<Test>]
@@ -34,10 +38,10 @@ module CodeGenTests =
         let env = ref (Env.newTypeEnv())
         let r = trial {
             let ast = match data with
-            | Ast ast -> ast
-            | Txt txt -> match Parser.parse txt with
-                         | Pass ast -> ast
-                         | e -> failwithf "%A" e
+                      | Ast ast -> ast
+                      | Txt txt -> match Parser.parse txt with
+                                   | Pass ast -> ast
+                                   | e -> failwithf "%A" e
             let! t = ast |> Typing.typed env |> Trial.mapFailure (List.map Codegen.CodeGenError.TypingError)
             let ast = Typing.typed_deref ast
             return! Codegen.gen ast env senv "test.exe"

@@ -72,14 +72,14 @@ module ParserTests =
                                                                                          Var (Id "y") @@ (1L,36L)))), Type.genType())),
                                                                 None))
                 d "let f (x:int) : int = x" (LetIn(Syntax.Decl(Id "f", Type.genType()), (FunDef([Decl(Id "x", Type.Int)],
-                                                                                     FBody.Body << Var <| Id "x", Type.Int)),
-                                         None))
+                                                                                                FBody.Body << Var <| Id "x", Type.Int)),
+                                                                                                None))
                 d "let f x y = y" (LetIn(Syntax.Decl(Id "f", Type.genType()), (FunDef([Decl(Id "x", Type.genType());Decl(Id "y", Type.genType())],
-                                                                                     FBody.Body << Var <| Id "y", Type.genType())),
-                                         None))
+                                                                                      FBody.Body << Var <| Id "y", Type.genType())),
+                                                                                      None))
                 d "let f (x) = x" (LetIn(Syntax.Decl(Id "f", Type.genType()), (FunDef([Decl(Id "x", Type.genType())],
-                                                                                     FBody.Body << Var <| Id "x", Type.genType())),
-                                         None))
+                                                                                      FBody.Body << Var <| Id "x", Type.genType())),
+                                                                                      None))
                 d "let fact n =\
                      if n <= 1 then 1
                      else n * (fact (n - 1))"
