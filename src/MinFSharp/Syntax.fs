@@ -14,6 +14,7 @@ module Syntax =
         static member from(p:FParsec.Position) = {line=(int)p.Line; lineEnd = (int)p.Line; col=(int)p.Column; colEnd=(int)p.Column+1}
         static member from(l,c) = {line=l; lineEnd=l; col=c; colEnd=c+1}
         static member range(lf,lt,cf,ct) = {line=lf; lineEnd=lt; col=cf; colEnd=ct}
+        static member fromRange(p:FParsec.Position)(p2:FParsec.Position) = {line=(int)p.Line; lineEnd = (int)p2.Line; col=(int)p.Column; colEnd=(int)p2.Column}
         static member zero = Pos.from(0, 0)
 
     let zeroPos = FParsec.Position(null, 0L, 0L, 0L)

@@ -126,6 +126,7 @@ module ParserTests =
     let testParseOk (s:string) (a:Syntax.t) =
         match MinFSharp.Parser.parseU (ignore (*printf "%A"*)) s with
         | Ok((pos,ast),_) ->
+            printf "%A" pos
             printf "%A" ast
             try printf "\nPrettyPrint:\n%s\n" (PrettyPrinter.print PrettyPrinter.defaultOptions ast) with e -> printfn "%O" e
             diff ast a

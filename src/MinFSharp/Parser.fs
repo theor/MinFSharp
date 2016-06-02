@@ -24,7 +24,7 @@ module Parser =
     let getPos = getPosition |>> Pos.from
     let withPos p = getPos .>>. p
 
-    let pos p = tuple3 getPosition p getPosition |>> (fun (ps, x, pe) -> x)
+    let range p = tuple3 getPosition p getPosition |>> (fun (ps, x, pe) -> (Pos.fromRange ps pe),x)
 
     let parseU (f:UserState -> Unit) (s : string) : ParsingResult =
         let pInt = getPosition .>>. pint32 |>> (fun (p,i) -> (*p,*)Lit(Int i)) <!> "pInt"
@@ -36,7 +36,7 @@ module Parser =
             else preturn <| Identifier.Id x)
             <!> "pId"
 
-        let pExp, pExpImpl = createParserForwardedToRef()
+        let (pExp:Parser<post,UserState>), pExpImpl = createParserForwardedToRef()
 
         let pParenExp = between (skipChar '(') (skipChar ')') pExp
 
@@ -64,22 +64,22 @@ module Parser =
         let pFunArgs = many1 (choice [pFunArgPar;pId .>>. preturn (Type.genType())] .>>? ws)
                        |>> List.map (fun (x,t) -> Decl(x, t))
                        <!> "pFunArgs"
-        let pDecFun = tuple5 (pId .>>? ws1) pFunArgs pOptTypeAnn (str "=") (pExp .>> ws)
-                      |>> (fun (id, args, ret, _, body) ->
-                             ((id, Type.genType()), FunDef(args, FBody.Body body, ret)))
+        let pDecFun = tuple5 (pId .>>? ws1) pFunArgs pOptTypeAnn (str "=") (pExp .>> ws) |> range
+                      |>> (fun (pos, (id, args, ret, _, (_,body))) ->
+                             ((id, Type.genType()), (pos,FunDef(args, FBody.Body body, ret))))
                       <!> "pDecFun"
 
         let pDec = attempt pDecFun <|> pDecVal
         let pDeclist = pDec
         let pLet = (str "let") >>. pDeclist .>>. (opt ((strn "in") >>. pExp))
-                   |>> (fun ((dVar, dVal), exp) -> LetIn(Decl dVar, dVal, exp))
+                   |>> (fun ((dVar, dVal), exp) -> LetIn(Decl dVar, snd dVal, Option.map snd exp))
 
         let pSimpleExp = choice [
                                   stringReturn "()" (Lit Unit)
                                   pInt
                                   pBool
                                   attempt (pId |>> Var)
-                                  attempt pParenExp
+                                  attempt (pParenExp |>> snd)
                                   pLet
                                   ] <!> "pSimpleExp"
         let pAppExps = pSimpleExp .>>. opt (many (ws1 >>? pSimpleExp)) .>> ws
@@ -101,9 +101,8 @@ module Parser =
             |>> (fun ((eIf, eThen), eElse) -> If(eIf, eThen, eElse))
             <!> "pIf"
         let pBlockExp = pIf <|> pOpExp <!> "pBlockExp"
-        pExpImpl := sepBy1 (withPos pBlockExp) (strn ";" |>> ignore
-                                      <|> (anyOf "\n" .>> ws |>> ignore <!> "p \\n"))
-                    |>> (fun l -> if List.length l = 1 then snd l.Head else Seq l)
+        pExpImpl := range (sepBy1 (range pBlockExp) (strn ";" |>> ignore <|> (anyOf "\n" .>> ws |>> ignore <!> "p \\n")))
+                    |>> (fun (p,l) -> if List.length l = 1 then l.Head else (p,Seq l))
                     <!> "pExp"
         let p = pExp
         let r =
@@ -111,6 +110,6 @@ module Parser =
                                                               { Message = ""
                                                                 Indent = 0 } }) "" s
         match r with
-        | FParsec.CharParsers.Success(r, u, _p) -> f u; ok ((*FIXME*)Pos.zero, r)
+        | FParsec.CharParsers.Success(r, u, _p) -> f u; ok r
         | Failure(e, (_err), u) -> f u; Chessie.ErrorHandling.Trial.fail (e,u)
     let parse s : ParsingResult = parseU ignore s

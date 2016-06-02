@@ -184,7 +184,7 @@ module Codegen =
 //            let! a = genAst doc il senv varEnv ast
             return il.Create OpCodes.Ret |> il.Append
         }
-        
+
     let gen ((pos,ast):Syntax.post) (tenv:Env.Type ref) (senv:Env.Symbol ref) (path:string) =
         let varEnv : CliVarEnv ref = ref Map.empty
         let name = System.IO.Path.GetFileNameWithoutExtension path
