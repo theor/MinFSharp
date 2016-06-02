@@ -11,6 +11,9 @@ module Codegen =
     let tr<'a> (def:AssemblyDefinition) = def.MainModule.Import(typeof<'a>)
     let mr<'a> (m:string) (args:System.Type array) (def:AssemblyDefinition) = def.MainModule.Import(typeof<'a>.GetMethod(m, args))
 
+    type Debuggable = System.Diagnostics.DebuggableAttribute
+    type Mode = System.Diagnostics.DebuggableAttribute.DebuggingModes
+
     let createAssembly name =
         let asmName = AssemblyNameDefinition(name, System.Version(1, 0,0,0))
         let def = Mono.Cecil.AssemblyDefinition.CreateAssembly(asmName,name, ModuleKind.Console)
@@ -19,12 +22,20 @@ module Codegen =
         let attr = CustomAttribute(def.MainModule.Import x)
         attr.ConstructorArguments.Add(CustomAttributeArgument(def.MainModule.TypeSystem.String, "test"))
         def.CustomAttributes.Add(attr)
+
+        let dbgc = typeof<Debuggable>.GetConstructor([|typeof<Mode>|])
+        let dbgArg = CustomAttributeArgument(def.MainModule.Import(typeof<Mode>), Mode.Default ||| Mode.DisableOptimizations ||| Mode.IgnoreSymbolStoreSequencePoints)
+        let dbg = CustomAttribute(def.MainModule.Import dbgc)
+        dbg.ConstructorArguments.Add(dbgArg)
+        def.CustomAttributes.Add(dbg)
+
         def
 
     type CodeGenError =
     | NotFound of Identifier.t
     | TypingError of Typing.TypingError
     | UnknownType of Type.t
+    | Exception of System.Exception
 
     type CliVar =
     | Local of VariableDefinition
@@ -35,9 +46,15 @@ module Codegen =
     let inline (<!>) (il:ILProcessor) op = il.Append <| il.Create(op); il
     let inline (<!!>) (il:ILProcessor) op = il.Append <| op; il
 
-    let seqPoint doc (instr:Instruction) =
-        instr.SequencePoint <- SequencePoint(doc)
-        instr.SequencePoint.Document <- Document("")
+    let seqPoint doc (pos:Syntax.Pos) (instr:Instruction) =
+        let sp = SequencePoint(doc)
+        sp.StartLine <- int(pos.line)
+        sp.EndLine <- int(pos.line)
+        sp.StartColumn <- int(pos.col)
+        sp.EndColumn <- int(pos.col) + 1
+        instr.SequencePoint <- sp
+        instr
+
 
     let rec deref (ast:Syntax.t) (senv:Env.Symbol ref) =
         match ast with
@@ -53,7 +70,7 @@ module Codegen =
         | Type.Float -> ok def.TypeSystem.Single
         | _ -> fail (UnknownType t)
 
-    let rec funCall il fu senv varEnv args =
+    let rec funCall (doc:Document) il fu senv varEnv args =
         let rec deref_fun (id) (senv:Env.Symbol ref) =
             match Map.tryFind id !senv with
             | Some(Var id) -> deref_fun id senv
@@ -65,7 +82,7 @@ module Codegen =
                 let! fid,f = deref_fun fid senv
                 match f with
                 | FunDef(_args, body, _ret) ->
-                    let! _ = args |> List.map (genAst il senv varEnv) |> Trial.collect
+                    let! _ = args |> List.map (genAst doc il senv varEnv) |> Trial.collect
                     match body with
                     | Ext(Opcode o)-> il.Append <| il.Create o
                     | Ext(Ext.Method me) -> il.Append <| il.Create(OpCodes.Call, il.Body.Method.Module.Import me)
@@ -76,7 +93,8 @@ module Codegen =
                 | _ -> failwith "ASDASD"
         }
 
-    and genAst (il:ILProcessor) (senv:Env.Symbol ref) (varEnv:CliVarEnv ref) ast =
+    and genAst (doc:Document) (il:ILProcessor) (senv:Env.Symbol ref) (varEnv:CliVarEnv ref) ast =
+        let sp = seqPoint doc
         match ast with
         | Lit l -> match l with
                    | Int i -> il.Create(OpCodes.Ldc_I4, i) |> il.Append |> ok
@@ -84,8 +102,8 @@ module Codegen =
                    | Bool b -> il.Create(OpCodes.Ldc_I4, if b then 1 else 0) |> il.Append |> ok
                    | _ -> failwithf "Lit not implemented yet: %A" l
         | BinOp(op, (_lp,l), (_rp,r)) ->
-            funCall il (Var(opId op)) senv varEnv [l;r]
-        | App(fu, args) -> funCall il fu senv varEnv args
+            funCall doc il (Var(opId op)) senv varEnv [l;r]
+        | App(fu, args) -> funCall doc il fu senv varEnv args
         | LetIn(Decl(Identifier.Id id as fid, _vt), (FunDef(args,body,vt) as fd), scope) ->
             trial {
                 senv := !senv |> Map.add fid fd
@@ -106,11 +124,11 @@ module Codegen =
                 targs |> List.iter (fun a -> m.Parameters.Add(a))
                 declTy.Methods.Add m
                 match body with
-                | FBody.Body b -> do! genMethodBody m senv varEnv b
+                | FBody.Body b -> do! genMethodBody doc m senv varEnv b
                 | _ -> failwithf "Should be standard method body"
                 match scope with
                 | None -> return ()
-                | Some scope -> return! genAst il senv varEnv scope
+                | Some scope -> return! genAst doc il senv varEnv scope
             }
         | LetIn(Decl(id, vt), value, scope) ->
             trial {
@@ -118,40 +136,41 @@ module Codegen =
                 let var = VariableDefinition cliVt
                 varEnv := Map.add id (Local var) !varEnv
                 il.Body.Variables.Add var
-                let! _ = genAst il senv varEnv value
+                let! _ = genAst doc il senv varEnv value
                 il.Emit(OpCodes.Stloc, var)
 //                il.Emit(OpCodes.Ldloc, var)
                 match scope with
                 | None -> return ()
-                | Some scope -> return! genAst il senv varEnv scope
+                | Some scope -> return! genAst doc il senv varEnv scope
             }
         | Var(id) ->
             match Map.tryFind id !varEnv with
             | None -> fail (NotFound id)
             | Some(Local vd) -> il.Create(OpCodes.Ldloc, vd) |> il.Append |> ok
             | Some(Arg a) -> il.Create(OpCodes.Ldarg, a) |> il.Append |> ok
-        | If((_pcond, cond),(_pthen, ethen), (_pelse, eelse)) ->
+        | If((pcond, cond),(pthen, ethen), (pelse, eelse)) ->
             trial {
-                let! _ = genAst il senv varEnv cond
-                let nopElse = il.Create(OpCodes.Nop)
+                let! _ = genAst doc il senv varEnv cond
+
+                let nopElse = il.Create(OpCodes.Nop) |> sp pelse
                 il.Create(OpCodes.Brfalse, nopElse) |> il.Append
                 let nopEnd = il.Create(OpCodes.Nop)
-                let! _ = genAst il senv varEnv ethen
+                let! _ = genAst doc il senv varEnv ethen
                 il.Create(OpCodes.Br, nopEnd) |> il.Append
                 il.Append nopElse
-                let! _ = genAst il senv varEnv eelse
+                let! _ = genAst doc il senv varEnv eelse
                 il.Append nopEnd
                 return ()
             }
         | FunDef(_args,_body,_ret) -> failwith "NO FUN DEF"
         | Seq s ->
             trial {
-                let _ = s |> List.map (snd >> (genAst il senv varEnv)) |> Trial.collect
+                let _ = s |> List.map (snd >> (genAst doc il senv varEnv)) |> Trial.collect
                 return ()
             }
         | Internal(Ignore ast) ->
             trial {
-                let! _ = genAst il senv varEnv ast
+                let! _ = genAst doc il senv varEnv ast
                 return il.Append <| il.Create OpCodes.Pop
             }
 
@@ -159,18 +178,20 @@ module Codegen =
 
     and genMethod () = ok ()
 
-    and genMethodBody (m:MethodDefinition) (senv:Env.Symbol ref) (varEnv:CliVarEnv ref) (ast:Syntax.t) =
+    and genMethodBody (doc:Document) (m:MethodDefinition) (senv:Env.Symbol ref) (varEnv:CliVarEnv ref) (ast:Syntax.t) =
         let il = m.Body.GetILProcessor()
         trial {
-            let! a = genAst il senv varEnv ast
+            let! a = genAst doc il senv varEnv ast
             return il.Create OpCodes.Ret |> il.Append
         }
-
+        
     let gen (ast:Syntax.t) (tenv:Env.Type ref) (senv:Env.Symbol ref) (path:string) =
         let varEnv : CliVarEnv ref = ref Map.empty
         let name = System.IO.Path.GetFileNameWithoutExtension path
 
         let def = createAssembly name
+
+        let doc = Document(System.IO.Path.ChangeExtension(path, "ml"))
 
         let tVoid = def.MainModule.TypeSystem.Void
 
@@ -183,7 +204,7 @@ module Codegen =
         def.MainModule.EntryPoint <- mMain
         tProgram.Methods.Add mMain
         trial {
-            let! _ = genMethodBody mMain senv (varEnv) ast
+            let! _ = genMethodBody doc mMain senv (varEnv) ast
             let parameters = WriterParameters()
             parameters.WriteSymbols <- true
             parameters.SymbolWriterProvider <- Pdb.PdbWriterProvider()

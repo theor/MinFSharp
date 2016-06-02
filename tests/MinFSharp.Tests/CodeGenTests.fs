@@ -87,3 +87,15 @@ module CodeGenTests =
             | e -> printfn "%A" e; Assert.Inconclusive (sprintf "%A" (e.GetType().Name))
         | Fail e -> failwithf "ERROR %A" e
         | _ -> failwithf "ERROR %A" r
+
+    type FileSource() =
+        static member Data() =
+            System.IO.Directory.EnumerateFiles("cases", "*.ml")
+            |> Seq.map (fun x -> x)
+            |> Seq.toArray
+
+    [<Test>]
+    [<TestCaseSource(typeof<FileSource>, "Data")>]
+    let f file =
+        match Compiler.compile (System.IO.Path.ChangeExtension(file, ".exe")) [file] with
+        | _ -> ()

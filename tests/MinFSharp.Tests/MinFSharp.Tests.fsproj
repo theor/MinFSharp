@@ -72,6 +72,9 @@
     <Compile Include="CodeGenTests.fs" />
     <None Include="paket.references" />
     <Content Include="App.config" />
+    <Content Include="cases\if-print.ml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <Reference Include="mscorlib" />
