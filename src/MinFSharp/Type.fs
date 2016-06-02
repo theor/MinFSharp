@@ -19,6 +19,7 @@ module Type =
             | Fun(l, r) -> [l;r] |> List.map tstr |> String.concat " -> "
             | Tuple(l) -> l |> List.map tstr |> String.concat " * "
             | Array(t) -> sprintf "%O array" t
+//            | Var(t) when !t = None -> null
             | Var(t) -> sprintf "'%O" t
             | _ -> sprintf "%A" x
 //        override x.GetHashCode() = System.ValueType.

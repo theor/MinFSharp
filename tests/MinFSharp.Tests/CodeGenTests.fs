@@ -19,6 +19,7 @@ module CodeGenTests =
     let p (str) =
         tidx := !tidx + 1
         TestCaseData(Txt str, !tidx).SetName(str)
+    let n name (tcd:TestCaseData) = tcd.SetName(name)
 
     type TCS() =
         static member Data() =

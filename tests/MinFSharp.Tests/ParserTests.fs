@@ -127,6 +127,7 @@ module ParserTests =
         match MinFSharp.Parser.parseU (ignore (*printf "%A"*)) s with
         | Ok(ast,_) ->
             printf "%A" ast
+            try printf "\nPrettyPrint:\n%s\n" (PrettyPrinter.print PrettyPrinter.defaultOptions ast) with e -> printfn "%O" e
             diff ast a
             ast |> shouldEqual a
             let env = ref (Env.newTypeEnv())
@@ -139,7 +140,7 @@ module ParserTests =
     [<Test>]
     [<TestCaseSource(typeof<TCS>, "Data")>]
     let ``parsing tests`` (s:string,a:Syntax.t) =
-        FParsecTrace.print <- true
+        FParsecTrace.print <- false
         ignore <| testParseOk s a
 
     [<Test>]

@@ -62,6 +62,7 @@
     <Compile Include="FParsecTrace.fs" />
     <Compile Include="Type.fs" />
     <Compile Include="Syntax.fs" />
+    <Compile Include="PrettyPrinter.fs" />
     <Compile Include="Env.fs" />
     <Compile Include="Typing.fs" />
     <Compile Include="Interpreter.fs" />
