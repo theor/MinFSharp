@@ -39,6 +39,7 @@ module Syntax =
     | Bool of bool
     | Int of int
     | Float of float
+    and Internal = Ignore of t
     and t =
     | Lit of Lit
     | BinOp of Op * post * post
@@ -48,6 +49,7 @@ module Syntax =
     | FunDef of args:VarDecl list * body:FBody * ty:Type.t
     | App of t * t list
     | Seq of post list
+    | Internal of Internal
     with
         override x.ToString() = sprintf "%A" x
 

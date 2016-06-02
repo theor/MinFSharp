@@ -121,14 +121,14 @@ module Typing =
             | Some tyop -> return! typedApp env tyop [a;b]
         }
 
-    and typed_deref x =
+    and typed_deref_rec x =
         let rec do_deref_type t =
             match t with
             | Type.Var v -> match !v with
                             | Some(Type.Link vv) -> do_deref_type vv
                             | _ -> t
             | _ -> t
-        let f = typed_deref
+        let f = typed_deref_rec
         let fp (pos,x) = (pos, f x)
         match x with
         | Syntax.Lit _ | Syntax.Var _ -> x
@@ -143,6 +143,12 @@ module Typing =
             Syntax.FunDef(args, body, do_deref_type ty)
         | Syntax.App(fu, args) -> Syntax.App(f fu, args |> List.map f)
         | Syntax.Seq(s) -> Syntax.Seq(s |> List.map fp)
+
+    and typed_deref t x =
+        let ast = typed_deref_rec x
+        match t with
+        | Type.Unit -> x
+        | _ -> Syntax.Internal(Syntax.Ignore x)
 
     and instantiate_at i t poly =
         match poly with

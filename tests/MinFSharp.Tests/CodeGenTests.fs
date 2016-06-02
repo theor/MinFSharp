@@ -2,6 +2,7 @@
 
 module CodeGenTests =
 
+    open System.Reflection
     open MinFSharp
     open MinFSharp.Syntax
     open MinFSharp.Identifier
@@ -9,10 +10,15 @@ module CodeGenTests =
     open Chessie.ErrorHandling
     open FsUnitTyped
 
+    let tidx = ref 0
     let print l = Syntax.App (Var(Id "printf"), l)
     type Data = Ast of Syntax.t | Txt of string
-    let t (ast:Syntax.t) = TestCaseData(Ast ast).SetName(ast.ToString())
-    let p (str) = TestCaseData(Txt str).SetName(str)
+    let t (ast:Syntax.t) =
+        tidx := !tidx + 1
+        TestCaseData(Ast ast, !tidx).SetName(ast.ToString())
+    let p (str) =
+        tidx := !tidx + 1
+        TestCaseData(Txt str, !tidx).SetName(str)
 
     type TCS() =
         static member Data() =
@@ -31,9 +37,26 @@ module CodeGenTests =
                p "printf 1; printf 2"
             |]
 
+    let (|Inner|_|) typ (exn:System.Exception) =
+        match exn with
+        | :? System.Reflection.TargetInvocationException as e ->
+            match e.InnerException with
+            | null -> None
+            | x when x.GetType() = typ -> Some x
+            | _ -> None
+        | _ -> None
+    let innerIs<'a when 'a :> System.Exception> (exn:System.Exception) =
+        match exn :?> System.Reflection.TargetInvocationException with
+        | null -> None
+        | e -> if e.InnerException :? 'a then Some e.InnerException else None
+
     [<Test>]
     [<TestCaseSource(typeof<TCS>, "Data")>]
-    let ``gen asm`` (data:Data) =
+    let ``gen asm`` (data:Data) idx =
+        if  not <| System.IO.Directory.Exists "tests" then ignore <| System.IO.Directory.CreateDirectory "tests"
+        let path = System.IO.Path.Combine(System.IO.Path.GetFullPath "tests", sprintf "test-%i.exe" idx)
+        printfn "path: %s" path
+        try System.IO.File.Delete path with | e -> printfn "%A" e
         let senv = ref (Env.newSymbolEnv())
         let env = ref (Env.newTypeEnv())
         let r = trial {
@@ -43,10 +66,23 @@ module CodeGenTests =
                                    | Pass ast -> ast
                                    | e -> failwithf "%A" e
             let! t = ast |> Typing.typed env |> Trial.mapFailure (List.map Codegen.CodeGenError.TypingError)
-            let ast = Typing.typed_deref ast
-            return! Codegen.gen ast env senv "test.exe"
+            let ast = Typing.typed_deref t ast
+            return! Codegen.gen ast env senv path
         }
         match r with
-        | Pass _ -> ()
+        | Pass _ ->
+            let typ = typeof<System.InvalidProgramException>
+            try
+                let a = Assembly.LoadFrom path
+                let types = a.GetTypes()
+                printf "%A" types
+                let tProgram = a.GetType (sprintf "test-%i.Program" idx)
+                let mMain = tProgram.GetMethod("Main")// BindingFlags.Static)
+                printfn "%A" (tProgram.GetMethods())
+                let res = mMain.Invoke(null, [|Array.empty<string>|])
+                ()
+            with
+            | Inner typ e -> Assert.Fail "Invalid Program"
+            | e -> printfn "%A" e; Assert.Inconclusive (sprintf "%A" (e.GetType().Name))
         | Fail e -> failwithf "ERROR %A" e
         | _ -> failwithf "ERROR %A" r

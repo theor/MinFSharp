@@ -35,6 +35,10 @@ module Codegen =
     let inline (<!>) (il:ILProcessor) op = il.Append <| il.Create(op); il
     let inline (<!!>) (il:ILProcessor) op = il.Append <| op; il
 
+    let seqPoint doc (instr:Instruction) =
+        instr.SequencePoint <- SequencePoint(doc)
+        instr.SequencePoint.Document <- Document("")
+
     let rec deref (ast:Syntax.t) (senv:Env.Symbol ref) =
         match ast with
         | Var id -> match Map.tryFind id !senv with
@@ -144,6 +148,11 @@ module Codegen =
             trial {
                 let _ = s |> List.map (snd >> (genAst il senv varEnv)) |> Trial.collect
                 return ()
+            }
+        | Internal(Ignore ast) ->
+            trial {
+                let! _ = genAst il senv varEnv ast
+                return il.Append <| il.Create OpCodes.Pop
             }
 
         | _ -> failwithf "Not implemented yet: %A" ast
