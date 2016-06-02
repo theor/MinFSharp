@@ -9,11 +9,12 @@ module Identifier =
 
 module Syntax =
 //    [<CustomEquality;NoComparison>]
-    type Pos = {line:int64; col:int64}
+    type Pos = {line:int; lineEnd:int; col:int; colEnd: int}
     with
-        static member from(p:FParsec.Position) = {line=p.Line; col=p.Column}
-        static member from(l,c) = {line=l; col=c}
-        static member zero = Pos.from(0L, 0L)
+        static member from(p:FParsec.Position) = {line=(int)p.Line; lineEnd = (int)p.Line; col=(int)p.Column; colEnd=(int)p.Column+1}
+        static member from(l,c) = {line=l; lineEnd=l; col=c; colEnd=c+1}
+        static member range(lf,lt,cf,ct) = {line=lf; lineEnd=lt; col=cf; colEnd=ct}
+        static member zero = Pos.from(0, 0)
 
     let zeroPos = FParsec.Position(null, 0L, 0L, 0L)
 
@@ -60,7 +61,7 @@ module Syntax =
     let varId s = Var(Identifier.Id s)
     let appId s args = App(Var(Identifier.Id s), args)
 
-    let inline (@@) s (l:int64, c:int64) : post = (Pos.from(l, c), s)
+    let inline (@@) s (l:int, c:int) : post = (Pos.from(l, c), s)
     let inline (@=) s (p:Pos) : post = (p, s)
 //    let inline (@@) s (l:int, c:int) : post = (Pos.from(int64 l, int64 c), s)
 //    let map f s =

@@ -61,14 +61,14 @@ module CodeGenTests =
         let senv = ref (Env.newSymbolEnv())
         let env = ref (Env.newTypeEnv())
         let r = trial {
-            let ast = match data with
-                      | Ast ast -> ast
+            let pos, ast = match data with
+                      | Ast ast -> Pos.zero, ast
                       | Txt txt -> match Parser.parse txt with
-                                   | Pass ast -> ast
+                                   | Pass x -> x
                                    | e -> failwithf "%A" e
             let! t = ast |> Typing.typed env |> Trial.mapFailure (List.map Codegen.CodeGenError.TypingError)
             let ast = Typing.typed_deref t ast
-            return! Codegen.gen ast env senv path
+            return! Codegen.gen (pos, ast) env senv path
         }
         match r with
         | Pass _ ->

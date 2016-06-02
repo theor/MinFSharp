@@ -17,12 +17,12 @@ module Compiler =
             let doc = Document(path)
             doc.Language <- DocumentLanguage.Other
             doc.Type <- DocumentType.Text
-            let ast = match Parser.parse txt with
-                      | Pass ast -> ast
+            let pos,ast = match Parser.parse txt with
+                      | Pass x -> x
                       | e -> failwithf "%A" e
             let! t = ast |> Typing.typed env |> Trial.mapFailure (List.map Codegen.CodeGenError.TypingError)
             let ast = Typing.typed_deref t ast
-            return! Codegen.genMethodBody doc m senv varEnv ast
+            return! Codegen.genMethodBody doc m senv varEnv (pos,ast)
         }
     let compile (assemblyPath:string) (files:string list) =
         let assemblyPath = System.IO.Path.GetFullPath assemblyPath
