@@ -89,18 +89,20 @@ module Codegen =
                     | Body _b ->
                         match !varEnv |> Map.tryFind fid with
                         | Some(Method methodRef) ->
-                            il.Append <| il.Create(OpCodes.Call, methodRef)
+                           il.Create(OpCodes.Call, methodRef) |> seqPoint doc posfu |> il.Append
                 | _ -> failwith "ASDASD"
         }
 
     and genAst (doc:Document) (il:ILProcessor) (senv:Env.Symbol ref) (varEnv:CliVarEnv ref) (pos,ast) =
         let sp = seqPoint doc
         match ast with
-        | Lit l -> match l with
-                   | Int i -> il.Create(OpCodes.Ldc_I4, i) |> sp pos |> il.Append |> ok
-                   | Float f -> il.Create(OpCodes.Ldc_R4, f) |> il.Append |> ok
-                   | Bool b -> il.Create(OpCodes.Ldc_I4, if b then 1 else 0) |> il.Append |> ok
-                   | _ -> failwithf "Lit not implemented yet: %A" l
+        | Lit l ->
+            let instr = match l with
+                        | Int i -> il.Create(OpCodes.Ldc_I4, i)
+                        | Float f -> il.Create(OpCodes.Ldc_R4, f)
+                        | Bool b -> il.Create(OpCodes.Ldc_I4, if b then 1 else 0)
+                        | _ -> failwithf "Lit not implemented yet: %A" l
+            instr (*|> sp pos*) |> il.Append |> ok
         | BinOp(op, l, r) ->
             funCall doc il (pos, Var(opId op)) senv varEnv [l;r]
         | App(fu, args) -> funCall doc il fu senv varEnv args //FIXME
@@ -152,8 +154,8 @@ module Codegen =
             trial {
                 let! _ = genAst doc il senv varEnv cond
 
-                let nopElse = il.Create(OpCodes.Nop) |> sp (fst eelse)
-                il.Create(OpCodes.Brfalse, nopElse) |> il.Append
+                let nopElse = il.Create(OpCodes.Nop)// |> sp (fst eelse)
+                il.Create(OpCodes.Brfalse, nopElse) |> sp (fst cond) |> il.Append
                 let nopEnd = il.Create(OpCodes.Nop)
                 let! _ = genAst doc il senv varEnv ethen
                 il.Create(OpCodes.Br, nopEnd) |> il.Append
@@ -171,7 +173,7 @@ module Codegen =
         | Internal(Ignore ast) ->
             trial {
                 let! _ = genAst doc il senv varEnv (pos,ast)
-                return il.Append <| il.Create OpCodes.Pop
+                return il.Create OpCodes.Pop |> sp pos |> il.Append
             }
 
         | _ -> failwithf "Not implemented yet: %A" ast
@@ -181,7 +183,7 @@ module Codegen =
     and genMethodBody (doc:Document) (m:MethodDefinition) (senv:Env.Symbol ref) (varEnv:CliVarEnv ref) ((pos,ast):Syntax.post) =
         let il = m.Body.GetILProcessor()
         trial {
-//            let! a = genAst doc il senv varEnv ast
+            let! a = genAst doc il senv varEnv (pos,ast)
             return il.Create OpCodes.Ret |> il.Append
         }
 

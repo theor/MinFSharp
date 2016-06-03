@@ -51,6 +51,21 @@ module CodeGenTests =
         | null -> None
         | e -> if e.InnerException :? 'a then Some e.InnerException else None
 
+    let checkAssembly path sNamespace =
+        let typ = typeof<System.InvalidProgramException>
+        try
+            let a = Assembly.LoadFrom path
+            let types = a.GetTypes()
+            printf "%A" types
+            let tProgram = a.GetType (sprintf "%s.Program" sNamespace)
+            let mMain = tProgram.GetMethod("Main")// BindingFlags.Static)
+            printfn "%A" (tProgram.GetMethods())
+            let res = mMain.Invoke(null, [|Array.empty<string>|])
+            ()
+        with
+        | Inner typ e -> Assert.Fail "Invalid Program"
+        | e -> printfn "%A" e; Assert.Inconclusive (sprintf "%A" (e.GetType().Name))
+
     [<Test>]
     [<TestCaseSource(typeof<TCS>, "Data")>]
     let ``gen asm`` (data:Data) idx =
@@ -71,20 +86,8 @@ module CodeGenTests =
             return! Codegen.gen (pos, ast) env senv path
         }
         match r with
-        | Pass _ ->
-            let typ = typeof<System.InvalidProgramException>
-            try
-                let a = Assembly.LoadFrom path
-                let types = a.GetTypes()
-                printf "%A" types
-                let tProgram = a.GetType (sprintf "test-%i.Program" idx)
-                let mMain = tProgram.GetMethod("Main")// BindingFlags.Static)
-                printfn "%A" (tProgram.GetMethods())
-                let res = mMain.Invoke(null, [|Array.empty<string>|])
-                ()
-            with
-            | Inner typ e -> Assert.Fail "Invalid Program"
-            | e -> printfn "%A" e; Assert.Inconclusive (sprintf "%A" (e.GetType().Name))
+        | Pass _ -> checkAssembly path (sprintf "test-%i" idx)
+
         | Fail e -> failwithf "ERROR %A" e
         | _ -> failwithf "ERROR %A" r
 
@@ -97,5 +100,9 @@ module CodeGenTests =
     [<Test>]
     [<TestCaseSource(typeof<FileSource>, "Data")>]
     let f file =
-        match Compiler.compile (System.IO.Path.ChangeExtension(file, ".exe")) [file] with
-        | _ -> ()
+        let exePath = System.IO.Path.ChangeExtension(file, ".exe")
+        let ns = System.IO.Path.GetFileNameWithoutExtension exePath
+        match Compiler.compile exePath [file] with
+        | Pass _ | Warn(_,_) -> checkAssembly exePath ns
+        | Fail e -> Assert.Fail(sprintf "%A" e)
+//        | Warn(_,e) -> ()
