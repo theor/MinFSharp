@@ -3,7 +3,7 @@
 module Env =
     open Identifier
     open Syntax
-    open Mono.Cecil.Cil
+    open System.Reflection.Emit
     type Symbol = Map<Identifier.t,Syntax.t>
     type Type = private { types:Map<Identifier.t,Type.t>
                           mutable polytypeCount:uint32 }

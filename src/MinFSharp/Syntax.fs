@@ -20,7 +20,7 @@ module Syntax =
 
     let zeroPos = FParsec.Position(null, 0L, 0L, 0L)
 
-    type Ext = Opcode of Mono.Cecil.Cil.OpCode | Method of System.Reflection.MethodInfo
+    type Ext = Opcode of System.Reflection.Emit.OpCode | Method of System.Reflection.MethodInfo
     [<CustomEquality;NoComparison>]
     type FBody = | Body of body:post | Ext of Ext
     with

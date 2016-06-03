@@ -83,7 +83,8 @@ module CodeGenTests =
                                    | e -> failwithf "%A" e
             let! t = ast |> Typing.typed env |> Trial.mapFailure (List.map Codegen.CodeGenError.TypingError)
             let ast = Typing.typed_deref t ast
-            return! Codegen.gen (pos, ast) env senv path
+            return ()
+//            return! Comp (pos, ast) env senv path
         }
         match r with
         | Pass _ -> checkAssembly path (sprintf "test-%i" idx)

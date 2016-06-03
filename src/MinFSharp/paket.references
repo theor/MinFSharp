@@ -1,4 +1,3 @@
 group Core
 FParsec
-Mono.Cecil
 File:ErrorHandling.fs .
