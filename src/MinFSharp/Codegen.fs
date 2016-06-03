@@ -103,7 +103,7 @@ module Codegen =
                    | _ -> failwithf "Lit not implemented yet: %A" l
         | BinOp(op, l, r) ->
             funCall doc il (pos, Var(opId op)) senv varEnv [l;r]
-//        | App(fu, args) -> funCall doc il fu senv varEnv args //FIXME
+        | App(fu, args) -> funCall doc il fu senv varEnv args //FIXME
         | LetIn(Decl(Identifier.Id id as fid, _vt), (posDef, (FunDef(args,body,vt) as fd)), scope) ->
             trial {
                 senv := !senv |> Map.add fid fd

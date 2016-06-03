@@ -24,12 +24,12 @@ module CodeGenTests =
     type TCS() =
         static member Data() =
             [| t (Lit(Int 42))
-               t (Syntax.App (pz <| Var(Id "printf"), [Lit(Int 13)]))
-               t (Syntax.App (pz <| Var(Id "printf"), [binOp "+" (sInt 13) (sInt 2)]))
-               t (Syntax.App (pz <| Var(Id "printf"), [binOp "+" (binOp "+" (sInt 13) (sInt 2)) (sInt 5)]))
-               t (LetIn(Syntax.Decl(Id("x"),Type.genType()), pz (sInt 3), Some <| pz (print [varId "x"])))
-               t (sif (sBool true) (print [sInt 1]) (print [sInt 2]))
-               t (sif (binOp "<" (sInt 2) (sInt 1)) (print [sInt 1]) (print [sInt 2]))
+               t (Syntax.App (pz <| Var(Id "printf"), [pz <| Lit(Int 13)]))
+               t (Syntax.App (pz <| Var(Id "printf"), [pz <| binOp "+" (sInt 13) (sInt 2)]))
+               t (Syntax.App (pz <| Var(Id "printf"), [pz <| binOp "+" (binOp "+" (sInt 13) (sInt 2)) (sInt 5)]))
+               t (LetIn(Syntax.Decl(Id("x"),Type.genType()), pz (sInt 3), Some <| pz (print [pz <| varId "x"])))
+               t (sif (sBool true) (print [pz <| sInt 1]) (print [pz <| sInt 2]))
+               t (sif (binOp "<" (sInt 2) (sInt 1)) (print [pz <| sInt 1]) (print [pz <| sInt 2]))
                p "1"
                p "if 1 < 2 then printf 1 else printf 2"
                p "let f (x:int) (y:int) : int = x + y"

@@ -50,7 +50,7 @@ module Syntax =
     | If of post * post * post
     | Var of Identifier.t
     | FunDef of args:VarDecl list * body:FBody * ty:Type.t
-    | App of post * t list
+    | App of post * post list
     | Seq of post list
     | Internal of Internal
     with

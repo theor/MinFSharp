@@ -103,7 +103,7 @@ module Typing =
                 | _ -> return! fail (Syntax.Pos.zero, UnknownError)
             }
         trial {
-            let! targs = args |> List.map (typed env) |> Trial.collect
+            let! targs = args |> List.map (snd >> typed env) |> Trial.collect
             return! typeArrow tyFunc targs
         }
 
@@ -113,7 +113,7 @@ module Typing =
 //        | Type.Poly p, x -> ok x
         | _,_ -> fail (typeMismatch tExp tAct)
 
-    and typedBinOp (env) op (ap, a) (bp, b) =
+    and typedBinOp (env) op a b =
         let opId = Syntax.opName op |> Identifier.Id
         trial {
             match (!env).tryFind opId with
@@ -141,7 +141,7 @@ module Typing =
                        | Syntax.Ext e -> body
                        | Syntax.Body (p,b) -> Syntax.Body (p, f b)
             Syntax.FunDef(args, body, do_deref_type ty)
-        | Syntax.App((pfu,fu), args) -> Syntax.App((pfu, f fu), args |> List.map f)
+        | Syntax.App((pfu,fu), args) -> Syntax.App((pfu, f fu), args |> List.map (fun (p,a) -> p, f a))
         | Syntax.Seq(s) -> Syntax.Seq(s |> List.map fp)
 
     and typed_deref t x =

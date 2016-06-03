@@ -23,20 +23,20 @@ module TypingTests =
 
                d (Type.arrow[Type.Int; Type.Int; Type.Int]) (Var (Identifier.Id "(+)"))
                d (Type.arrow[Type.Int; Type.Int; Type.Int]) (Var (Identifier.Id "add"))
-               d (Type.Int) (App(pz <| Var (Identifier.Id "add"), [sInt 1; sInt 2]))
-               f (Type.Int) (App(pz <| Var (Identifier.Id "add"), [sInt 1; sFloat 2.0]))
-               f (Type.Int) (App(pz <| Var (Identifier.Id "add"), [sInt 1; sInt 2; sInt 3]))
-               d (Type.arrow[Type.Int; Type.Int]) (App (pz <| Var (Identifier.Id "add"), [sInt 1]))
+               d (Type.Int) (App(pz <| Var (Identifier.Id "add"), [pz <| sInt 1; pz <| sInt 2]))
+               f (Type.Int) (App(pz <| Var (Identifier.Id "add"), [pz <| sInt 1; pz <| sFloat 2.0]))
+               f (Type.Int) (App(pz <| Var (Identifier.Id "add"), [pz <| sInt 1; pz <| sInt 2; pz <| sInt 3]))
+               d (Type.arrow[Type.Int; Type.Int]) (App (pz <| Var (Identifier.Id "add"), [pz <| sInt 1]))
 
-               d (Type.Int) (App(pz <| Syntax.varId "id", [sInt 1]))
+               d (Type.Int) (App(pz <| Syntax.varId "id", [pz <| sInt 1]))
 
                d (Type.Fun(Type.poly 0u, Type.poly 0u))
                  (Syntax.FunDef([Syntax.Decl(Identifier.Id "x", Type.genType())],
-                                Syntax.FBody.Body(Syntax.varId "x"),
+                                Syntax.FBody.Body(pz <| Syntax.varId "x"),
                                 Type.genType()))
                d (Type.Fun(Type.poly 0u, Type.poly 0u))
                  (Syntax.FunDef([Syntax.Decl(Identifier.Id "x", Type.genType())],
-                                Syntax.FBody.Body(Syntax.BinOp("+", pz <| Syntax.varId "x", pz <| Syntax.varId "x")),
+                                Syntax.FBody.Body(pz <| Syntax.BinOp("+", pz <| Syntax.varId "x", pz <| Syntax.varId "x")),
                                 Type.genType()))
 
                d Type.Int (BinOp("+", pz <| sInt 42, pz <| sInt 42))

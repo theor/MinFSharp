@@ -20,13 +20,13 @@ module Interpreter =
             | Ok ((FunDef (fargs, fbody, _tret)), _) ->
                 match fbody with
                 | Body (_,b) ->
-                    let ne = List.zip fargs fparams |> List.fold (fun env (Decl(ai,_aty),fp) -> Map.add ai fp env) e
+                    let ne = List.zip fargs fparams |> List.fold (fun env (Decl(ai,_aty),fp) -> Map.add ai (snd fp) env) e
                     eval ne b
                 | Ext ext -> fail ApplyNotFunction// ok <| ext fparams
             | Ok _ -> fail ApplyNotFunction
             | Bad(_e) -> fail _e.Head
         | FunDef(_fargs, _body, _tret) -> ok a
-        | BinOp(op, (_lp,l), (_rp,r)) ->
+        | BinOp(op, l, r) ->
             let oid = (Identifier.Id <| sprintf "(%s)" op)
             eval e (App((Pos.zero, Var oid), [l; r]))
         | LetIn(_, _, _) -> failwith "Not implemented yet"

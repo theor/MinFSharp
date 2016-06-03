@@ -79,7 +79,7 @@ module Parser =
                                   attempt (pParenExp |>> snd)
                                   pLet
                                   ] <!> "pSimpleExp"
-        let pAppExps = range(range pSimpleExp .>>. opt (many (ws1 >>? pSimpleExp))) .>> ws
+        let pAppExps = range(range pSimpleExp .>>. opt (many (ws1 >>? range pSimpleExp))) .>> ws
                        |>> (fun (pos,(h,l)) -> match l with
                                          | None | Some [] -> h
                                          | Some l -> pos,App(h, l))

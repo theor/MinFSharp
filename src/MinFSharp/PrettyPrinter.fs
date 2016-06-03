@@ -45,7 +45,7 @@ module PrettyPrinter =
             match print_type ty with
             | Some t -> sprintf "%s : %s =\n%s%s" sArgs t idt (pinc body)
             | None -> sprintf "%s =\n%s%s" sArgs idt (pinc body)
-        | App((_,f), args) -> String.concat " " (f :: args |> List.map pi)
+        | App(f, args) -> String.concat " " (f :: args |> List.map (snd >> pi))
         | Seq(s) -> String.concat "\n" (s |> List.map (snd >> pi))
         | Internal(Ignore x) -> sprintf "ignore (%s)" (p 0 x)
 
