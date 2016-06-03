@@ -30,7 +30,7 @@ module EvalTests =
 
     [<Test>]
     let ``let var then return``() =
-        let ast = LetIn(Syntax.Decl(Id "x", Type.Int), sInt 13, Var(Id "x") |> Some)
+        let ast = LetIn(Syntax.Decl(Id "x", Type.Int), pz <| sInt 13, Var(Id "x") |> Some)
         testEvalRes (Env.newSymbolEnv()) ast (sInt 13)
 
     [<Test>]

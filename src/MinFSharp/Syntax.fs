@@ -8,9 +8,10 @@ module Identifier =
             | Id s -> sprintf "Id:%s" s
 
 module Syntax =
-//    [<CustomEquality;NoComparison>]
+    [<CustomEquality;NoComparison>]
     type Pos = {line:int; lineEnd:int; col:int; colEnd: int}
     with
+        override x.Equals(y:obj) = true //HACK
         static member from(p:FParsec.Position) = {line=(int)p.Line; lineEnd = (int)p.Line; col=(int)p.Column; colEnd=(int)p.Column+1}
         static member from(l,c) = {line=l; lineEnd=l; col=c; colEnd=c+1}
         static member range(lf,lt,cf,ct) = {line=lf; lineEnd=lt; col=cf; colEnd=ct}
@@ -36,7 +37,7 @@ module Syntax =
     and Op = string
     and post = Pos * t
     and VarDecl = Decl of id:Identifier.t * ty:Type.t
-    and Lit = 
+    and Lit =
     | Unit
     | Bool of bool
     | Int of int
@@ -45,7 +46,7 @@ module Syntax =
     and t =
     | Lit of Lit
     | BinOp of Op * post * post
-    | LetIn of id:VarDecl * value:t * scope:(t option)
+    | LetIn of id:VarDecl * value:post * scope:(t option)
     | If of post * post * post
     | Var of Identifier.t
     | FunDef of args:VarDecl list * body:FBody * ty:Type.t

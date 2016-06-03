@@ -21,9 +21,6 @@ module Parser =
     let str = pstringws
     let strn s = pstring s .>> nws
 
-    let getPos = getPosition |>> Pos.from
-    let withPos p = getPos .>>. p
-
     let range p = tuple3 getPosition p getPosition |>> (fun (ps, x, pe) -> (Pos.fromRange ps pe),x)
 
     let parseU (f:UserState -> Unit) (s : string) : ParsingResult =
@@ -72,7 +69,7 @@ module Parser =
         let pDec = attempt pDecFun <|> pDecVal
         let pDeclist = pDec
         let pLet = (str "let") >>. pDeclist .>>. (opt ((strn "in") >>. pExp))
-                   |>> (fun ((dVar, dVal), exp) -> LetIn(Decl dVar, snd dVal, Option.map snd exp))
+                   |>> (fun ((dVar, dVal), exp) -> LetIn(Decl dVar, dVal, Option.map snd exp))
 
         let pSimpleExp = choice [
                                   stringReturn "()" (Lit Unit)
@@ -91,13 +88,13 @@ module Parser =
 
         let pBinOp = attempt ( many1 (anyOf "!%&*+-./<=>@^|~?") ) .>> ws |>> (List.toArray >> System.String) <!> "pBinOp"
 
-        let pBinOpApp = attempt (tuple3 (withPos pAppExps) pBinOp (withPos pOpExp))
+        let pBinOpApp = attempt (tuple3 (range pAppExps) pBinOp (range pOpExp))
                         |>> (fun (l,o,r) -> BinOp(o, l, r))
         pOpExpImpl := choice [pBinOpApp; pAppExps] .>> ws
                       <!> "pOpExp"
 
         let pIf =
-            str "if" >>. (withPos pOpExp) .>> strn "then" .>>. (withPos pOpExp) .>> nws .>> strn "else" .>> nws .>>. (withPos pOpExp)
+            str "if" >>. (range pOpExp) .>> strn "then" .>>. (range pOpExp) .>> nws .>> strn "else" .>> nws .>>. (range pOpExp)
             |>> (fun ((eIf, eThen), eElse) -> If(eIf, eThen, eElse))
             <!> "pIf"
         let pBlockExp = pIf <|> pOpExp <!> "pBlockExp"

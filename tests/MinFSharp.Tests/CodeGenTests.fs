@@ -27,7 +27,7 @@ module CodeGenTests =
                t (Syntax.App (Var(Id "printf"), [Lit(Int 13)]))
                t (Syntax.App (Var(Id "printf"), [binOp "+" (sInt 13) (sInt 2)]))
                t (Syntax.App (Var(Id "printf"), [binOp "+" (binOp "+" (sInt 13) (sInt 2)) (sInt 5)]))
-               t (LetIn(Syntax.Decl(Id("x"),Type.genType()), (sInt 3), Some <| (print [varId "x"])))
+               t (LetIn(Syntax.Decl(Id("x"),Type.genType()), pz (sInt 3), Some <| (print [varId "x"])))
                t (sif (sBool true) (print [sInt 1]) (print [sInt 2]))
                t (sif (binOp "<" (sInt 2) (sInt 1)) (print [sInt 1]) (print [sInt 2]))
                p "1"

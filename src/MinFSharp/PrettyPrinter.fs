@@ -32,8 +32,8 @@ module PrettyPrinter =
         | Lit(Int i) -> sprintf "%i" i
         | Lit(Float f) -> sprintf "%f" f
         | BinOp(op, (_pl, l), (_pr, r)) -> sprintf "(%s %s %s)" (pi l) op (pi r)
-        | LetIn(id, value, None) -> sprintf "let %s = %s" (print_vardecl id) (pi value)
-        | LetIn(id, value, Some scope) ->
+        | LetIn(id, (_p,value), None) -> sprintf "let %s = %s" (print_vardecl id) (pi value)
+        | LetIn(id, (_p,value), Some scope) ->
             sprintf "let %s = %s in\n%s" (print_vardecl id) (pi value) (pinc scope)
         | If((_pc, c), (_pt, t), (_pe, e)) ->
             let i = ind (indent+1)

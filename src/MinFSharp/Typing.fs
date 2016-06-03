@@ -30,7 +30,7 @@ module Typing =
         | Syntax.Lit(Syntax.Float(_)) -> ok Type.Float
         | Syntax.BinOp(op, a, b) -> typedBinOp env op a b
 
-        | Syntax.LetIn(Syntax.Decl(vid, vty), va, insOpt) ->
+        | Syntax.LetIn(Syntax.Decl(vid, vty), (_pva,va), insOpt) ->
             trial {
                 let! tyVa = typed env va
 //                match vty with

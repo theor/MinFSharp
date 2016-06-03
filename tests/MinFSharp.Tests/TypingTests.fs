@@ -42,11 +42,11 @@ module TypingTests =
                d Type.Int (BinOp("+", pz <| sInt 42, pz <| sInt 42))
                f Type.Int (BinOp("+", pz <| sInt 42, pz <| sFloat 42.0))
 
-               d Type.Int (LetIn(Syntax.Decl(Id("x"),Type.genType()), (sInt 3), Some <| sInt 42))
-               d Type.Int (LetIn(Syntax.Decl(Id("x"),Type.genType()), (sInt 3), Some <| varId "x"))
-               d Type.Int (LetIn(Syntax.Decl(Id("x"),Type.genType()), (sInt 3),
+               d Type.Int (LetIn(Syntax.Decl(Id("x"),Type.genType()), pz (sInt 3), Some <| sInt 42))
+               d Type.Int (LetIn(Syntax.Decl(Id("x"),Type.genType()), pz (sInt 3), Some <| varId "x"))
+               d Type.Int (LetIn(Syntax.Decl(Id("x"),Type.genType()), pz (sInt 3),
                                  Some <| varId "x"))
-               f Type.Int (LetIn(Syntax.Decl(Id("x"),Type.Unit), (sInt 3), Some <| varId "x"))
+               f Type.Int (LetIn(Syntax.Decl(Id("x"),Type.Unit), pz (sInt 3), Some <| varId "x"))
 
                d Type.Int (If(sBool true |> pz, sInt 3 |> pz, sInt 4 |> pz))
                f Type.Int (If(sBool true |> pz, sFloat 4.0 |> pz, sInt 4 |> pz))

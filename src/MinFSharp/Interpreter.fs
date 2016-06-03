@@ -9,7 +9,7 @@ module Interpreter =
     let rec eval (e:Env.Symbol)(a:Syntax.t) : EvalResult =
         match a with
         | Lit _ -> ok a
-        | LetIn(Decl(id,ty), value, Some body) -> eval (e |> Map.add id value) body
+        | LetIn(Decl(id,ty), (_,value), Some body) -> eval (e |> Map.add id value) body
         | Var(id) ->
             trial {
                 let! def = (Map.tryFind id e) |> failIfNone (AppNotFound id)
