@@ -22,7 +22,7 @@ module Syntax =
 
     type Ext = Opcode of Mono.Cecil.Cil.OpCode | Method of System.Reflection.MethodInfo
     [<CustomEquality;NoComparison>]
-    type FBody = | Body of body:t | Ext of Ext
+    type FBody = | Body of body:post | Ext of Ext
     with
         override x.Equals(yobj) =
             match yobj with

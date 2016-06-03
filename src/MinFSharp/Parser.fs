@@ -62,7 +62,7 @@ module Parser =
                        |>> List.map (fun (x,t) -> Decl(x, t))
                        <!> "pFunArgs"
         let pDecFun = tuple5 (pId .>>? ws1) pFunArgs pOptTypeAnn (str "=") (pExp .>> ws) |> range
-                      |>> (fun (pos, (id, args, ret, _, (_,body))) ->
+                      |>> (fun (pos, (id, args, ret, _, body)) ->
                              ((id, Type.genType()), (pos,FunDef(args, FBody.Body body, ret))))
                       <!> "pDecFun"
 

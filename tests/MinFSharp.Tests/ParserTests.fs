@@ -67,25 +67,25 @@ module ParserTests =
                 d "if (f 42) then 1 else 2" (If((appId "f" [sInt 42]) @@ (1,4), sInt 1 @@ (1,16), sInt 2 @@ (1,23)))
                 d "let min x y = if x < y then x else y" (LetIn(Syntax.Decl(Id "min", Type.genType()),
                                                                 (Pos.zero, FunDef([Decl(Id "x", Type.genType());Decl(Id "y", Type.genType())],
-                                                                        FBody.Body ((If (BinOp ("<",Var (Id "x") @@ (1,18), Var (Id "y")@@ (1,22)) @@ (1,18),
+                                                                        FBody.Body (pz (If (BinOp ("<",Var (Id "x") @@ (1,18), Var (Id "y")@@ (1,22)) @@ (1,18),
                                                                                          Var (Id "x") @@ (1,29),
                                                                                          Var (Id "y") @@ (1,36)))), Type.genType())),
                                                                 None))
                 d "let f (x:int) : int = x" (LetIn(Syntax.Decl(Id "f", Type.genType()), (Pos.zero, FunDef([Decl(Id "x", Type.Int)],
-                                                                                                FBody.Body << Var <| Id "x", Type.Int)),
+                                                                                                FBody.Body(pz <|varId "x"), Type.Int)),
                                                                                                 None))
                 d "let f x y = y" (LetIn(Syntax.Decl(Id "f", Type.genType()), (Pos.zero, FunDef([Decl(Id "x", Type.genType());Decl(Id "y", Type.genType())],
-                                                                                      FBody.Body << Var <| Id "y", Type.genType())),
+                                                                                      FBody.Body(pz <|varId "y"), Type.genType())),
                                                                                       None))
                 d "let f (x) = x" (LetIn(Syntax.Decl(Id "f", Type.genType()), (Pos.zero, FunDef([Decl(Id "x", Type.genType())],
-                                                                                      FBody.Body << Var <| Id "x", Type.genType())),
+                                                                                      FBody.Body(pz <|varId "x"), Type.genType())),
                                                                                       None))
                 d "let fact n =\
                      if n <= 1 then 1
                      else n * (fact (n - 1))"
                    (LetIn(Syntax.Decl(Id "fact", Type.genType()),
                           (Pos.zero, FunDef([Decl(Id "n", Type.genType())],
-                                 Body(If(BinOp ("<=",Var (Id "n") @@ (1,16),sInt 1 @@ (1,21)) @@ (1,16),
+                                 Body(pz <| If(BinOp ("<=",Var (Id "n") @@ (1,16),sInt 1 @@ (1,21)) @@ (1,16),
                                          sInt 1 @@ (1,28),
                                          BinOp("*",Var (Id "n") @@ (2,27),
                                                    App (pz <| Var (Id "fact"),
@@ -96,7 +96,7 @@ module ParserTests =
                      else n * (fact (n-1))"
                    (LetIn(Syntax.Decl(Id "fact", Type.genType()),
                           (Pos.zero, FunDef([Decl(Id "n", Type.genType())],
-                                 Body(If(BinOp ("<=",Var (Id "n") @@ (1,16),sInt 1 @@ (1,21)) @@ (1,16),
+                                 Body(pz <| If(BinOp ("<=",Var (Id "n") @@ (1,16),sInt 1 @@ (1,21)) @@ (1,16),
                                          sInt 1 @@ (1,28),
                                          BinOp("*",Var (Id "n") @@ (2,27),
                                                    App (pz <| Var (Id "fact"),
@@ -148,7 +148,7 @@ module ParserTests =
     let ``fbody equality test`` () =
         let pz a = a @= Pos.zero
         let a = FunDef([Decl(Id "n", Type.genType())],
-                                 Body(If(BinOp ("<=",Var (Id "n") @= Pos.zero, sInt 1 @= Pos.zero) |> pz,
+                                 Body(pz <| If(BinOp ("<=",Var (Id "n") @= Pos.zero, sInt 1 @= Pos.zero) |> pz,
                                          sInt 1 |> pz,
                                          BinOp("*",Var (Id "n") @= Pos.zero,
                                                    App (pz <| Var (Id "fact"),

@@ -70,7 +70,7 @@ module Codegen =
         | Type.Float -> ok def.TypeSystem.Single
         | _ -> fail (UnknownType t)
 
-    let rec funCall (doc:Document) il fu senv varEnv args =
+    let rec funCall (doc:Document) il ((posfu,fu):post) senv varEnv args =
         let rec deref_fun (id) (senv:Env.Symbol ref) =
             match Map.tryFind id !senv with
             | Some(Var id) -> deref_fun id senv
@@ -101,80 +101,80 @@ module Codegen =
                    | Float f -> il.Create(OpCodes.Ldc_R4, f) |> il.Append |> ok
                    | Bool b -> il.Create(OpCodes.Ldc_I4, if b then 1 else 0) |> il.Append |> ok
                    | _ -> failwithf "Lit not implemented yet: %A" l
-//        | BinOp(op, (_lp,l), (_rp,r)) ->
-//            funCall doc il (Var(opId op)) senv varEnv [l;r]
-//        | App(fu, args) -> funCall doc il fu senv varEnv args
-//        | LetIn(Decl(Identifier.Id id as fid, _vt), (FunDef(args,body,vt) as fd), scope) ->
-//            trial {
-//                senv := !senv |> Map.add fid fd
-//                let! cliVt = typeToCliType il.Body.Method.Module vt
-//                let m = MethodDefinition(id, MethodAttributes.Static ||| MethodAttributes.Public, cliVt)
-//                varEnv := !varEnv |> Map.add fid (Method (m.GetElementMethod()))
-//
-//                let senv = args |> List.fold (fun e (Decl(id, _t)) -> Map.add id (Var id) e) !senv |> ref
-//                varEnv := args |> List.indexed |> List.fold (fun e (i, Decl(id, _t)) ->  Map.add id (Arg i) e) !varEnv
-//                let declTy = il.Body.Method.DeclaringType
-//                let! targs = args
-//                             |> List.map (fun (Decl(Identifier.Id id, t)) ->
-//                                        trial {
-//                                            let! cliT = typeToCliType il.Body.Method.Module t
-//                                            return ParameterDefinition(id, ParameterAttributes.None, cliT)
-//                                        })
-//                             |> Trial.collect
-//                targs |> List.iter (fun a -> m.Parameters.Add(a))
-//                declTy.Methods.Add m
-//                match body with
-//                | FBody.Body b -> do! genMethodBody doc m senv varEnv b
-//                | _ -> failwithf "Should be standard method body"
-//                match scope with
-//                | None -> return ()
-//                | Some scope -> return! genAst doc il senv varEnv scope
-//            }
-//        | LetIn(Decl(id, vt), value, scope) ->
-//            trial {
-//                let! cliVt = typeToCliType il.Body.Method.Module vt
-//                let var = VariableDefinition cliVt
-//                varEnv := Map.add id (Local var) !varEnv
-//                il.Body.Variables.Add var
-//                let! _ = genAst doc il senv varEnv value
-//                il.Emit(OpCodes.Stloc, var)
-////                il.Emit(OpCodes.Ldloc, var)
-//                match scope with
-//                | None -> return ()
-//                | Some scope -> return! genAst doc il senv varEnv scope
-//            }
-//        | Var(id) ->
-//            match Map.tryFind id !varEnv with
-//            | None -> fail (NotFound id)
-//            | Some(Local vd) -> il.Create(OpCodes.Ldloc, vd) |> il.Append |> ok
-//            | Some(Arg a) -> il.Create(OpCodes.Ldarg, a) |> il.Append |> ok
-//        | If((pcond, cond),(pthen, ethen), (pelse, eelse)) ->
-//            trial {
-//                let! _ = genAst doc il senv varEnv cond
-//
-//                let nopElse = il.Create(OpCodes.Nop) |> sp pelse
-//                il.Create(OpCodes.Brfalse, nopElse) |> il.Append
-//                let nopEnd = il.Create(OpCodes.Nop)
-//                let! _ = genAst doc il senv varEnv ethen
-//                il.Create(OpCodes.Br, nopEnd) |> il.Append
-//                il.Append nopElse
-//                let! _ = genAst doc il senv varEnv eelse
-//                il.Append nopEnd
-//                return ()
-//            }
-//        | FunDef(_args,_body,_ret) -> failwith "NO FUN DEF"
-//        | Seq s ->
-//            trial {
-//                let _ = s |> List.map (snd >> (genAst doc il senv varEnv)) |> Trial.collect
-//                return ()
-//            }
-//        | Internal(Ignore ast) ->
-//            trial {
-//                let! _ = genAst doc il senv varEnv ast
-//                return il.Append <| il.Create OpCodes.Pop
-//            }
-//
-//        | _ -> failwithf "Not implemented yet: %A" ast
+        | BinOp(op, l, r) ->
+            funCall doc il (pos, Var(opId op)) senv varEnv [l;r]
+//        | App(fu, args) -> funCall doc il fu senv varEnv args //FIXME
+        | LetIn(Decl(Identifier.Id id as fid, _vt), (posDef, (FunDef(args,body,vt) as fd)), scope) ->
+            trial {
+                senv := !senv |> Map.add fid fd
+                let! cliVt = typeToCliType il.Body.Method.Module vt
+                let m = MethodDefinition(id, MethodAttributes.Static ||| MethodAttributes.Public, cliVt)
+                varEnv := !varEnv |> Map.add fid (Method (m.GetElementMethod()))
+
+                let senv = args |> List.fold (fun e (Decl(id, _t)) -> Map.add id (Var id) e) !senv |> ref
+                varEnv := args |> List.indexed |> List.fold (fun e (i, Decl(id, _t)) ->  Map.add id (Arg i) e) !varEnv
+                let declTy = il.Body.Method.DeclaringType
+                let! targs = args
+                             |> List.map (fun (Decl(Identifier.Id id, t)) ->
+                                        trial {
+                                            let! cliT = typeToCliType il.Body.Method.Module t
+                                            return ParameterDefinition(id, ParameterAttributes.None, cliT)
+                                        })
+                             |> Trial.collect
+                targs |> List.iter (fun a -> m.Parameters.Add(a))
+                declTy.Methods.Add m
+                match body with
+                | FBody.Body b -> do! genMethodBody doc m senv varEnv b
+                | _ -> failwithf "Should be standard method body"
+                match scope with
+                | None -> return ()
+                | Some scope -> return! genAst doc il senv varEnv scope
+            }
+        | LetIn(Decl(id, vt), value, scope) ->
+            trial {
+                let! cliVt = typeToCliType il.Body.Method.Module vt
+                let var = VariableDefinition cliVt
+                varEnv := Map.add id (Local var) !varEnv
+                il.Body.Variables.Add var
+                let! _ = genAst doc il senv varEnv value
+                il.Emit(OpCodes.Stloc, var)
+//                il.Emit(OpCodes.Ldloc, var)
+                match scope with
+                | None -> return ()
+                | Some scope -> return! genAst doc il senv varEnv scope
+            }
+        | Var(id) ->
+            match Map.tryFind id !varEnv with
+            | None -> fail (NotFound id)
+            | Some(Local vd) -> il.Create(OpCodes.Ldloc, vd) |> il.Append |> ok
+            | Some(Arg a) -> il.Create(OpCodes.Ldarg, a) |> il.Append |> ok
+        | If(cond,ethen,eelse) ->
+            trial {
+                let! _ = genAst doc il senv varEnv cond
+
+                let nopElse = il.Create(OpCodes.Nop) |> sp (fst eelse)
+                il.Create(OpCodes.Brfalse, nopElse) |> il.Append
+                let nopEnd = il.Create(OpCodes.Nop)
+                let! _ = genAst doc il senv varEnv ethen
+                il.Create(OpCodes.Br, nopEnd) |> il.Append
+                il.Append nopElse
+                let! _ = genAst doc il senv varEnv eelse
+                il.Append nopEnd
+                return ()
+            }
+        | FunDef(_args,_body,_ret) -> failwith "NO FUN DEF"
+        | Seq s ->
+            trial {
+                let _ = s |> List.map (genAst doc il senv varEnv) |> Trial.collect
+                return ()
+            }
+        | Internal(Ignore ast) ->
+            trial {
+                let! _ = genAst doc il senv varEnv (pos,ast)
+                return il.Append <| il.Create OpCodes.Pop
+            }
+
+        | _ -> failwithf "Not implemented yet: %A" ast
 
     and genMethod () = ok ()
 

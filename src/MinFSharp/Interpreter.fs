@@ -19,7 +19,7 @@ module Interpreter =
             match eval e fid with
             | Ok ((FunDef (fargs, fbody, _tret)), _) ->
                 match fbody with
-                | Body b ->
+                | Body (_,b) ->
                     let ne = List.zip fargs fparams |> List.fold (fun env (Decl(ai,_aty),fp) -> Map.add ai fp env) e
                     eval ne b
                 | Ext ext -> fail ApplyNotFunction// ok <| ext fparams

@@ -69,7 +69,7 @@ module Typing =
                 | _ -> ok (tyv)// typed env vd
         | Syntax.FunDef(args, Syntax.FBody.Ext _ext, ret) ->
             ok (Type.arrow((args |> List.map Syntax.declType) @ [ret]))
-        | Syntax.FunDef(args, Syntax.FBody.Body body, ret) ->
+        | Syntax.FunDef(args, Syntax.FBody.Body (_,body), ret) ->
             trial {
                 let newEnv = args |> List.fold(fun e (Syntax.Decl(argId,argTy)) -> Env.add argId argTy e) !env |> ref
                 let! tret = typed newEnv body
@@ -139,7 +139,7 @@ module Typing =
             let args = args |> List.map (fun (Syntax.Decl(id,ty)) -> Syntax.Decl(id, do_deref_type ty))
             let body = match body with
                        | Syntax.Ext e -> body
-                       | Syntax.Body b -> Syntax.Body (f b)
+                       | Syntax.Body (p,b) -> Syntax.Body (p, f b)
             Syntax.FunDef(args, body, do_deref_type ty)
         | Syntax.App((pfu,fu), args) -> Syntax.App((pfu, f fu), args |> List.map f)
         | Syntax.Seq(s) -> Syntax.Seq(s |> List.map fp)

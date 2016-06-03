@@ -39,7 +39,7 @@ module PrettyPrinter =
             let i = ind (indent+1)
             sprintf "if %s then\n%s%s\nelse\n%s%s" (pi c) i (pinc t) i (pinc e)
         | Var(Id id) -> id
-        | FunDef(args, Body body, ty) ->
+        | FunDef(args, Body (_,body), ty) ->
             let sArgs = (args |> List.map print_vardecl |> String.concat " ")
             let idt = ind (indent+1)
             match print_type ty with
