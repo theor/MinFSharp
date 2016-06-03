@@ -23,12 +23,12 @@ module TypingTests =
 
                d (Type.arrow[Type.Int; Type.Int; Type.Int]) (Var (Identifier.Id "(+)"))
                d (Type.arrow[Type.Int; Type.Int; Type.Int]) (Var (Identifier.Id "add"))
-               d (Type.Int) (App(Var (Identifier.Id "add"), [sInt 1; sInt 2]))
-               f (Type.Int) (App(Var (Identifier.Id "add"), [sInt 1; sFloat 2.0]))
-               f (Type.Int) (App(Var (Identifier.Id "add"), [sInt 1; sInt 2; sInt 3]))
-               d (Type.arrow[Type.Int; Type.Int]) (App (Var (Identifier.Id "add"), [sInt 1]))
+               d (Type.Int) (App(pz <| Var (Identifier.Id "add"), [sInt 1; sInt 2]))
+               f (Type.Int) (App(pz <| Var (Identifier.Id "add"), [sInt 1; sFloat 2.0]))
+               f (Type.Int) (App(pz <| Var (Identifier.Id "add"), [sInt 1; sInt 2; sInt 3]))
+               d (Type.arrow[Type.Int; Type.Int]) (App (pz <| Var (Identifier.Id "add"), [sInt 1]))
 
-               d (Type.Int) (App(Syntax.varId "id", [sInt 1]))
+               d (Type.Int) (App(pz <| Syntax.varId "id", [sInt 1]))
 
                d (Type.Fun(Type.poly 0u, Type.poly 0u))
                  (Syntax.FunDef([Syntax.Decl(Identifier.Id "x", Type.genType())],

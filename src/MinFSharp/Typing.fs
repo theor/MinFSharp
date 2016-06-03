@@ -76,7 +76,7 @@ module Typing =
                 let args = args |> List.map (fun (Syntax.Decl(argId,_argTy)) -> Syntax.Decl(argId, Env.find argId !newEnv))
                 return Type.arrow((args |> List.map Syntax.declType) @ [tret])
             }
-        | Syntax.App(func, args) ->
+        | Syntax.App((_,func), args) ->
             trial {
                 let! tfunc = typed env func
                 return! typedApp env tfunc args
@@ -141,7 +141,7 @@ module Typing =
                        | Syntax.Ext e -> body
                        | Syntax.Body b -> Syntax.Body (f b)
             Syntax.FunDef(args, body, do_deref_type ty)
-        | Syntax.App(fu, args) -> Syntax.App(f fu, args |> List.map f)
+        | Syntax.App((pfu,fu), args) -> Syntax.App((pfu, f fu), args |> List.map f)
         | Syntax.Seq(s) -> Syntax.Seq(s |> List.map fp)
 
     and typed_deref t x =

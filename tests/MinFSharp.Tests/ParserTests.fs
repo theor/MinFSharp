@@ -45,7 +45,7 @@ module ParserTests =
                 d "1 !@~<> 2" (BinOp("!@~<>", sInt 1 @@ (1,1), sInt 2 @@ (1,9)))
                 d "f 42 13" (appId "f" [sInt 42; sInt 13])
                 d "(f 42 13)" (appId "f" [sInt 42; sInt 13])
-                d "(f (g 42) 13)" (App(Var(Id "f"), [appId "g" [sInt 42]; sInt 13]))
+                d "(f (g 42) 13)" (App(pz <| Var(Id "f"), [appId "g" [sInt 42]; sInt 13]))
                 d "let x = 7 in\nx" (LetIn(Syntax.Decl((Id "x"), Type.genType()), pz <| sInt 7,
                                            Some <| pz(Var(Id "x"))))
                 d "let x = 1 in\nlet y = 2 in\n x+y" (LetIn(Syntax.Decl((Id "x"), Type.genType()), pz <| sInt 1,
@@ -88,7 +88,7 @@ module ParserTests =
                                  Body(If(BinOp ("<=",Var (Id "n") @@ (1,16),sInt 1 @@ (1,21)) @@ (1,16),
                                          sInt 1 @@ (1,28),
                                          BinOp("*",Var (Id "n") @@ (2,27),
-                                                   App (Var (Id "fact"),
+                                                   App (pz <| Var (Id "fact"),
                                                         [BinOp ("-", Var (Id "n") @@ (2,38), sInt 1 @@ (2,42))]) @@ (2,31)) @@ (2,27))),
                                  Type.genType())),None))
                 d "let fact n =\
@@ -99,7 +99,7 @@ module ParserTests =
                                  Body(If(BinOp ("<=",Var (Id "n") @@ (1,16),sInt 1 @@ (1,21)) @@ (1,16),
                                          sInt 1 @@ (1,28),
                                          BinOp("*",Var (Id "n") @@ (2,27),
-                                                   App (Var (Id "fact"),
+                                                   App (pz <| Var (Id "fact"),
                                                         [BinOp ("-", Var (Id "n") @@ (2,38), sInt 1 @@ (2,40))]) @@ (2,31)) @@ (2,27))),
                                  Type.genType())),None))
             |]
@@ -151,6 +151,6 @@ module ParserTests =
                                  Body(If(BinOp ("<=",Var (Id "n") @= Pos.zero, sInt 1 @= Pos.zero) |> pz,
                                          sInt 1 |> pz,
                                          BinOp("*",Var (Id "n") @= Pos.zero,
-                                                   App (Var (Id "fact"),
+                                                   App (pz <| Var (Id "fact"),
                                                         [BinOp ("-", Var (Id "n") @= Pos.zero,sInt -1 @= Pos.zero)]) @= Pos.zero) |> pz)), Type.genType())
         a |> shouldEqual a

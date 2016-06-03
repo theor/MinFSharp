@@ -50,7 +50,7 @@ module Syntax =
     | If of post * post * post
     | Var of Identifier.t
     | FunDef of args:VarDecl list * body:FBody * ty:Type.t
-    | App of t * t list
+    | App of post * t list
     | Seq of post list
     | Internal of Internal
     with
@@ -61,7 +61,7 @@ module Syntax =
     let declType (Decl(_id, ty)) = ty
 
     let varId s = Var(Identifier.Id s)
-    let appId s args = App(Var(Identifier.Id s), args)
+    let appId s args = App((Pos.zero, Var(Identifier.Id s)), args)
 
     let inline (@@) s (l:int, c:int) : post = (Pos.from(l, c), s)
     let inline (@=) s (p:Pos) : post = (p, s)

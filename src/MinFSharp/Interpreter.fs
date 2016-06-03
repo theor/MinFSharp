@@ -15,7 +15,7 @@ module Interpreter =
                 let! def = (Map.tryFind id e) |> failIfNone (AppNotFound id)
                 return! eval e def
             }
-        | App(fid, fparams) ->
+        | App((_,fid), fparams) ->
             match eval e fid with
             | Ok ((FunDef (fargs, fbody, _tret)), _) ->
                 match fbody with
@@ -28,7 +28,7 @@ module Interpreter =
         | FunDef(_fargs, _body, _tret) -> ok a
         | BinOp(op, (_lp,l), (_rp,r)) ->
             let oid = (Identifier.Id <| sprintf "(%s)" op)
-            eval e (App(Var oid, [l; r]))
+            eval e (App((Pos.zero, Var oid), [l; r]))
         | LetIn(_, _, _) -> failwith "Not implemented yet"
         | If((_posConf, eif), (_posThen, ethen), (_posElse, eelse)) ->
             trial {

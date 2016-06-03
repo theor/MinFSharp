@@ -79,26 +79,26 @@ module Parser =
                                   attempt (pParenExp |>> snd)
                                   pLet
                                   ] <!> "pSimpleExp"
-        let pAppExps = pSimpleExp .>>. opt (many (ws1 >>? pSimpleExp)) .>> ws
-                       |>> (fun (h,l) -> match l with
+        let pAppExps = range(range pSimpleExp .>>. opt (many (ws1 >>? pSimpleExp))) .>> ws
+                       |>> (fun (pos,(h,l)) -> match l with
                                          | None | Some [] -> h
-                                         | Some l -> App(h, l))
+                                         | Some l -> pos,App(h, l))
                        <!> "pAppExps"
         let pOpExp, pOpExpImpl = createParserForwardedToRef()
 
         let pBinOp = attempt ( many1 (anyOf "!%&*+-./<=>@^|~?") ) .>> ws |>> (List.toArray >> System.String) <!> "pBinOp"
 
-        let pBinOpApp = attempt (tuple3 (range pAppExps) pBinOp (range pOpExp))
-                        |>> (fun (l,o,r) -> BinOp(o, l, r))
+        let pBinOpApp = attempt <| range (tuple3 (pAppExps) pBinOp (pOpExp))
+                        |>> (fun (pos,(l,o,r)) -> pos,BinOp(o, l, r))
         pOpExpImpl := choice [pBinOpApp; pAppExps] .>> ws
                       <!> "pOpExp"
 
         let pIf =
-            str "if" >>. (range pOpExp) .>> strn "then" .>>. (range pOpExp) .>> nws .>> strn "else" .>> nws .>>. (range pOpExp)
-            |>> (fun ((eIf, eThen), eElse) -> If(eIf, eThen, eElse))
+            range(str "if" >>. pOpExp .>> strn "then" .>>. pOpExp .>> nws .>> strn "else" .>> nws .>>. pOpExp)
+            |>> (fun (pos,((eIf, eThen), eElse)) -> pos,If(eIf, eThen, eElse))
             <!> "pIf"
         let pBlockExp = pIf <|> pOpExp <!> "pBlockExp"
-        pExpImpl := range (sepBy1 (range pBlockExp) (strn ";" |>> ignore <|> (anyOf "\n" .>> ws |>> ignore <!> "p \\n")))
+        pExpImpl := range (sepBy1 pBlockExp (strn ";" |>> ignore <|> (anyOf "\n" .>> ws |>> ignore <!> "p \\n")))
                     |>> (fun (p,l) -> if List.length l = 1 then l.Head else (p,Seq l))
                     <!> "pExp"
         let p = pExp

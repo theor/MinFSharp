@@ -11,7 +11,7 @@ module CodeGenTests =
     open FsUnitTyped
 
     let tidx = ref 0
-    let print l = Syntax.App (Var(Id "printf"), l)
+    let print l = Syntax.App (pz <| Var(Id "printf"), l)
     type Data = Ast of Syntax.t | Txt of string
     let t (ast:Syntax.t) =
         tidx := !tidx + 1
@@ -24,9 +24,9 @@ module CodeGenTests =
     type TCS() =
         static member Data() =
             [| t (Lit(Int 42))
-               t (Syntax.App (Var(Id "printf"), [Lit(Int 13)]))
-               t (Syntax.App (Var(Id "printf"), [binOp "+" (sInt 13) (sInt 2)]))
-               t (Syntax.App (Var(Id "printf"), [binOp "+" (binOp "+" (sInt 13) (sInt 2)) (sInt 5)]))
+               t (Syntax.App (pz <| Var(Id "printf"), [Lit(Int 13)]))
+               t (Syntax.App (pz <| Var(Id "printf"), [binOp "+" (sInt 13) (sInt 2)]))
+               t (Syntax.App (pz <| Var(Id "printf"), [binOp "+" (binOp "+" (sInt 13) (sInt 2)) (sInt 5)]))
                t (LetIn(Syntax.Decl(Id("x"),Type.genType()), pz (sInt 3), Some <| pz (print [varId "x"])))
                t (sif (sBool true) (print [sInt 1]) (print [sInt 2]))
                t (sif (binOp "<" (sInt 2) (sInt 1)) (print [sInt 1]) (print [sInt 2]))
