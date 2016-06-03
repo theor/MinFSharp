@@ -68,7 +68,7 @@ module Parser =
 
         let pDec = attempt pDecFun <|> pDecVal
         let pDeclist = pDec
-        let pLet = (str "let") >>. pDeclist .>>. (opt ((strn "in") >>. pExp))
+        let pLet = (str "let") >>. pDeclist .>>. (opt ((strn "in") >>. range pExp))
                    |>> (fun ((dVar, dVal), exp) -> LetIn(Decl dVar, dVal, Option.map snd exp))
 
         let pSimpleExp = choice [

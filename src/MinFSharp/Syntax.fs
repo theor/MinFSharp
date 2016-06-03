@@ -46,7 +46,7 @@ module Syntax =
     and t =
     | Lit of Lit
     | BinOp of Op * post * post
-    | LetIn of id:VarDecl * value:post * scope:(t option)
+    | LetIn of id:VarDecl * value:post * scope:(post option)
     | If of post * post * post
     | Var of Identifier.t
     | FunDef of args:VarDecl list * body:FBody * ty:Type.t

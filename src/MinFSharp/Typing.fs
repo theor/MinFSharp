@@ -39,7 +39,7 @@ module Typing =
                 let newEnv = Env.add vid tyVa !env |> ref
                 match insOpt with
                 | None -> return Type.Unit
-                | Some ins ->
+                | Some (_,ins) ->
                     let! tyIns = typed newEnv ins
                     match vty with
                     | Type.Var(vt) when !vt = None ->

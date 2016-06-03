@@ -47,19 +47,19 @@ module ParserTests =
                 d "(f 42 13)" (appId "f" [sInt 42; sInt 13])
                 d "(f (g 42) 13)" (App(Var(Id "f"), [appId "g" [sInt 42]; sInt 13]))
                 d "let x = 7 in\nx" (LetIn(Syntax.Decl((Id "x"), Type.genType()), pz <| sInt 7,
-                                           Some <| Var(Id "x")))
+                                           Some <| pz(Var(Id "x"))))
                 d "let x = 1 in\nlet y = 2 in\n x+y" (LetIn(Syntax.Decl((Id "x"), Type.genType()), pz <| sInt 1,
-                                                            (LetIn(Syntax.Decl((Id "y"), Type.genType()), pz <| sInt 2,
-                                                                   BinOp("+", Var(Id "x") @@ (3,2), Var(Id "y") @@ (3,4))|>Some))|>Some))
+                                                            pz (LetIn(Syntax.Decl((Id "y"), Type.genType()), pz <| sInt 2,
+                                                                   pz <| BinOp("+", Var(Id "x") @@ (3,2), Var(Id "y") @@ (3,4))|>Some))|>Some))
                 d "1;2" (Seq [sInt 1 @@ (1,1); sInt 2 @@ (1,3)])
                 d "1\n2" (Seq [sInt 1 @@ (1,1); sInt 2 @@ (2,1)])
                 d "let x : int = 7 in\nx" (LetIn(Syntax.Decl((Id "x"), Type.Int), pz <| sInt 7,
-                                                 Some <| Var(Id "x")))
+                                                 Some <| pz(Var(Id "x"))))
                 d "let x : bool = 7 in\nx" (LetIn(Syntax.Decl((Id "x"), Type.Bool), pz <| sInt 7,
-                                                 Some <| Var(Id "x")))
-                d "let x : int array = () in ()" (LetIn(Syntax.Decl(Id "x", Type.Array Type.Int), pz sUnit, Some sUnit))
-                d "let x : int * bool = () in ()" (LetIn(Syntax.Decl(Id "x", Type.Tuple [Type.Int; Type.Bool]), pz sUnit, Some sUnit))
-                d "let x : int -> bool -> float = () in ()" (LetIn(Syntax.Decl(Id "x", Type.arrow [Type.Int; Type.Bool; Type.Float]), pz sUnit, Some sUnit))
+                                                 Some <| pz(Var(Id "x"))))
+                d "let x : int array = () in ()" (LetIn(Syntax.Decl(Id "x", Type.Array Type.Int), pz sUnit, Some(pz sUnit)))
+                d "let x : int * bool = () in ()" (LetIn(Syntax.Decl(Id "x", Type.Tuple [Type.Int; Type.Bool]), pz sUnit, Some(pz sUnit)))
+                d "let x : int -> bool -> float = () in ()" (LetIn(Syntax.Decl(Id "x", Type.arrow [Type.Int; Type.Bool; Type.Float]), pz sUnit, Some(pz sUnit)))
                 d "true" (sBool true)
                 d "false" (sBool false)
                 d "if true then 1 else 2" (If(sBool true @@ (1, 4), sInt 1 @@ (1,14), sInt 2 @@ (1,21)))
