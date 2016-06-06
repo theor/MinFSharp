@@ -23,6 +23,10 @@ module Compiler =
                           | e -> failwithf "%A" e
             let! t = ast |> Typing.typed env |> Trial.mapFailure (List.map Codegen.CodeGenError.TypingError)
             let ast = Typing.typed_deref t ast
+
+            let il = m.GetILGenerator()
+            Codegen.seqPoint doc pos il
+            il.Emit(OpCodes.Nop)
             return! Codegen.genMethodBody doc m senv varEnv (pos,ast)
         }
     let compile (assemblyPath:string) (files:string list) =

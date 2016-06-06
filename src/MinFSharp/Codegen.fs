@@ -176,7 +176,8 @@ module Codegen =
         | FunDef(_args,_body,_ret) -> failwith "NO FUN DEF"
         | Seq s ->
             trial {
-                let _ = s |> List.map (genAst doc il senv varEnv) |> Trial.collect
+                let f x = sp (fst x) il; x
+                let _ = s |> List.map (f >> genAst doc il senv varEnv) |> Trial.collect
                 return ()
             }
         | Internal(Ignore ast) ->
