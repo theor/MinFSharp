@@ -15,8 +15,8 @@ module Typing =
     let typeMismatchAt (exp:Type.t) (act:Type.t) (p:Syntax.Pos) =
             p, TypingErrorType.TypeMismatch {expected = exp; actual = act}
 
-    let typeMismatch (exp:Type.t) (act:Type.t) =
-            Syntax.Pos.zero, TypingErrorType.TypeMismatch {expected = exp; actual = act}
+//    let typeMismatch (exp:Type.t) (act:Type.t) =
+//            Syntax.Pos.zero, TypingErrorType.TypeMismatch {expected = exp; actual = act}
 
     type TypingResult = Result<Type.t, TypingError>
 
@@ -39,14 +39,14 @@ module Typing =
                 let newEnv = Env.add vid tyVa !env |> ref
                 match insOpt with
                 | None -> return Type.Unit
-                | Some (_,ins) ->
+                | Some (p,ins) ->
                     let! tyIns = typed newEnv ins
                     match vty with
                     | Type.Var(vt) when !vt = None ->
                         vt := Some(Type.Link tyVa)
                         return tyIns
                     | t when t = tyVa -> return tyIns
-                    | _ -> return! fail <| typeMismatch tyVa vty
+                    | _ -> return! fail <| typeMismatchAt tyVa vty p
             }
         | Syntax.If((posCond,cond), (_posThen, ethen), (posElse, eelse)) ->
             trial {
@@ -97,21 +97,22 @@ module Typing =
 //                | Type.Fun(Type.Poly p, y), h::t ->
 //                    let inst = y |> instantiate_at p h
 //                    return! typeArrow inst t
-                | Type.Fun(x, y), h::t when x = h -> return! typeArrow y t
-                | Type.Fun(x, _), h::_ when x <> h -> return! fail <| typeMismatch x h
+                | Type.Fun(x, y), (h,_)::t when x = h -> return! typeArrow y t
+                | Type.Fun(x, _), (h,p)::_ when x <> h -> return! fail <| typeMismatchAt x h p
                 | t, [] -> return t
                 | _ -> return! fail (Syntax.Pos.zero, UnknownError)
             }
         trial {
             let! targs = args |> List.map (snd >> typed env) |> Trial.collect
-            return! typeArrow tyFunc targs
+            let posTyargs = args |> List.map fst |> List.zip targs
+            return! typeArrow tyFunc posTyargs
         }
 
-    and unify tExp tAct =
-        match tExp,tAct with
-        | a,b when a = b -> ok tExp
-//        | Type.Poly p, x -> ok x
-        | _,_ -> fail (typeMismatch tExp tAct)
+//    and unify tExp tAct =
+//        match tExp,tAct with
+//        | a,b when a = b -> ok tExp
+////        | Type.Poly p, x -> ok x
+//        | _,_ -> fail (typeMismatch tExp tAct)
 
     and typedBinOp (env) op a b =
         let opId = Syntax.opName op |> Identifier.Id
